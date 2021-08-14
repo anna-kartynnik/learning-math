@@ -1,0 +1,1 @@
+{"problem":"What is the value of $\\left(\\sqrt{4!\\cdot 3!}\\right)^2$?","level":"Level 1","type":"Counting & Probability","solution":"144","explanation":"We see that $$\\left(\\sqrt{4!\\cdot 3!}\\right)^2 = 4!\\cdot 3! = 24\\cdot 6 = \\boxed{144}.$$","equation":"144"}

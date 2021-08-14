@@ -1,0 +1,1 @@
+{"problem":"The double factorial, denoted by $n!!$, returns the product of all of the odd integers that are less than or equal to $n$. For example, $7!! = 7 \\times 5 \\times 3 \\times 1$. What is the units digit of $1!! + 3!! + 5!! + 7!! + \\cdots + 49!!$?","level":"Level 5","type":"Number Theory"}

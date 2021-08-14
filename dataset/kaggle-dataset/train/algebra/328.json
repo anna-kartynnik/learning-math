@@ -1,0 +1,1 @@
+{"problem":"If $2^8=16^x$, find $x$.","level":"Level 1","type":"Algebra","solution":"2","explanation":"We can write $16$ as $2^4$. Therefore, we can write our equation as $2^8 = 2^{4 \\cdot x}$. Solving, we get that $x = \\boxed{2}$.","equation":"2**8 = 2**4 * x ; x = 2"}

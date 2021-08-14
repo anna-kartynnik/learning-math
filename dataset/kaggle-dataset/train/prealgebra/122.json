@@ -1,0 +1,1 @@
+{"problem":"Find the greatest common divisor of 75 and 360.","level":"Level 3","type":"Prealgebra","solution":"15","explanation":"$75 = 3^1 \\cdot 5^2$ and $360 = 2^3 \\cdot 3^2 \\cdot 5^1$, so $\\gcd(75, 360) = 3^1 \\cdot 5^1 = \\boxed{15}$.","equation":"75 = 3**1 * 5**2 ; 360 = 2**3 * 3**2 * 5**1 ; \\gcd ( 75, 360 )  = 3**1 * 5**1 = 15"}

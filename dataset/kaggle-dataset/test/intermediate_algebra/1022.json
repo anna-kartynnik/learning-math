@@ -1,0 +1,1 @@
+{"problem":"The function $f(n)$ satisfies $f(1) = 1$ and $f(2n + 1) = f(n) + 1$ for $n \\ge 0.$  Find $f(15).$","level":"Level 2","type":"Intermediate Algebra"}

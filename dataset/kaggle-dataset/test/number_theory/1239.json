@@ -1,0 +1,1 @@
+{"problem":"Suppose we have four integers, no two of which are congruent $\\pmod 6$. Let $N$ be the product of the four integers.\n\nIf $N$ is not a multiple of $6$, then what is the remainder of $N$ when $N$ is divided by $6$?","level":"Level 3","type":"Number Theory"}

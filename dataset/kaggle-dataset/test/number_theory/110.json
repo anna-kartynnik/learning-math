@@ -1,0 +1,1 @@
+{"problem":"In this problem, $a$ and $b$ are integers, such that $a \\ge b.$\n\nIf $a+b\\equiv 2\\pmod{10}$ and $2a+b\\equiv 1\\pmod{10}$, then what is the last digit of $a-b$?","level":"Level 4","type":"Number Theory"}

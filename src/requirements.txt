@@ -1,0 +1,7 @@
+nltk
+numpy
+tqdm
+torch
+transformers
+sympy
+dgl

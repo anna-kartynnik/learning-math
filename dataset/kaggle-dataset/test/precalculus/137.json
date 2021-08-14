@@ -1,0 +1,1 @@
+{"problem":"Let $a,$ $b,$ $c,$ $p,$ $q,$ and $r$ be real numbers such that\n\\[\\begin{vmatrix} p & b & c \\\\ a & q & c \\\\ a & b & r \\end{vmatrix} = 0.\\]Assuming that $a \\neq p,$ $b \\neq q,$ and $c \\neq r,$ find the value of $\\frac{p}{p - a} + \\frac{q}{q - b} + \\frac{r}{r - c}.$","level":"Level 4","type":"Precalculus"}

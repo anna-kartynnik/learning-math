@@ -1,0 +1,1 @@
+{"problem":"For what positive value of $n$ does $|3+ni|=3\\sqrt{10}$?","level":"Level 2","type":"Intermediate Algebra","solution":"9","explanation":"We know that $3\\sqrt{10}=|3+ni|=\\sqrt{3^2+n^2}$. Squaring both sides gives $90 = 9 +n^2$, from which we quickly get our solution of $n=\\boxed{9}$.","equation":"3\\sqrt10 = |3 + ni| = \\sqrt3**2 + n**2 ; 90 = 9 + n**2 ; n = 9"}

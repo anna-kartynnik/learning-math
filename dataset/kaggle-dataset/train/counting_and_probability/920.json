@@ -1,0 +1,1 @@
+{"problem":"How many distinct three-digit positive integers have only odd digits?","level":"Level 2","type":"Counting & Probability","solution":"125","explanation":"There are 5 odd digits, and thus, each digit has 5 different possibilities, making for $5^3 = \\boxed{125}$ possibilities.","equation":"5 ** 3 = 125"}

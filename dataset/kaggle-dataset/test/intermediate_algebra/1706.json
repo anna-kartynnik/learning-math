@@ -1,0 +1,1 @@
+{"problem":"For positive real numbers $a,$ $b,$ $c,$ and $d,$ find the minimum value of\n\\[\\left\\lfloor \\frac{b + c + d}{a} \\right\\rfloor + \\left\\lfloor \\frac{a + c + d}{b} \\right\\rfloor + \\left\\lfloor \\frac{a + b + d}{c} \\right\\rfloor + \\left\\lfloor \\frac{a + b + c}{d} \\right\\rfloor.\\]","level":"Level 5","type":"Intermediate Algebra"}

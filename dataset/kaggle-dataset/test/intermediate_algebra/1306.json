@@ -1,0 +1,1 @@
+{"problem":"If $ a$, $ b$, $ c$, $ d$, and $ e$ are constants such that every $ x > 0$ satisfies\n\\[ \\frac{5x^4 - 8x^3 + 2x^2 + 4x + 7}{(x + 2)^4}     \n  = a + \\frac{b}{x + 2} + \\frac{c}{(x + 2)^2} \n      + \\frac{d}{(x + 2)^3} + \\frac{e}{(x + 2)^4} \\, ,\\]then what is the value of $ a + b + c + d + e$?","level":"Level 4","type":"Intermediate Algebra"}

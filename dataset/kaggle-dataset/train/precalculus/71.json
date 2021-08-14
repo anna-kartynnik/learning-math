@@ -1,0 +1,1 @@
+{"problem":"If $\\|\\mathbf{v}\\| = 4,$ then find $\\mathbf{v} \\cdot \\mathbf{v}.$","level":"Level 1","type":"Precalculus","solution":"16","explanation":"We have that $\\mathbf{v} \\cdot \\mathbf{v} = \\|\\mathbf{v}\\|^2 = \\boxed{16}.$","equation":"v * v = \\|v\\|**2 = 16."}

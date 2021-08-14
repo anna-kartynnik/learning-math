@@ -1,0 +1,1 @@
+{"problem":"Let $t(x) = \\sqrt{3x+1}$ and $f(x)=5-t(x)$. What is $t(f(5))$?","level":"Level 4","type":"Algebra","solution":"2","explanation":"We first evaluate $f(5) = 5 -t(5) = 5-\\sqrt{5\\cdot3+1}=1$. Thus $t(f(5))=t(1)=\\sqrt{3\\cdot1 + 1}=\\boxed{2}$.","equation":"f ( 5 )  = 5 - t ( 5 )  = 5 - \\sqrt5 * 3 + 1 = 1 ; t ( f ( 5 ) ) = t ( 1 ) = \\sqrt3 * 1 + 1 = 2"}

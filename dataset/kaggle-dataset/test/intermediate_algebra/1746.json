@@ -1,0 +1,1 @@
+{"problem":"Let $\\{a_n\\}_{n\\geq 1}$ be an arithmetic sequence and $\\{g_n\\}_{n\\geq 1}$ be a geometric sequence such that the first four terms of $\\{a_n+g_n\\}$ are $0$, $0$, $1$, and $0$, in that order.  What is the next term of $\\{a_n+g_n\\}$?\n\nNote: Duplicate problem","level":"Level 5","type":"Intermediate Algebra"}

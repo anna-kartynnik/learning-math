@@ -1,0 +1,1 @@
+{"problem":"Evaluate $\\log_2\\frac{1}{16}$.","level":"Level 2","type":"Algebra","solution":"-4","explanation":"Let $x=\\log_2\\frac{1}{16}$.  Then, we must have $2^x = \\frac{1}{16} = 2^{-4}$, so $x=\\boxed{-4}$.","equation":"x = \\log_2 * ( ( 1 ) \/ ( 16 ) )  ; 2**x =  ( ( 1 ) \/ ( 16 ) )  = 2** - 4 ; x = - 4"}

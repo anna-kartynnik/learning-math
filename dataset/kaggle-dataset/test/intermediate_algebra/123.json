@@ -1,0 +1,1 @@
+{"problem":"Let\n\\[\\sum_{n = 0}^{123456789} \\frac{3n^2 + 9n + 7}{(n^2 + 3n + 2)^3} = \\frac{a}{b},\\]where $a$ and $b$ are relatively prime positive integers.  Find $b - a.$","level":"Level 4","type":"Intermediate Algebra"}

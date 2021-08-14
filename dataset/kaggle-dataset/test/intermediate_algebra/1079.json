@@ -1,0 +1,1 @@
+{"problem":"Let $(a_1,b_1),$ $(a_2,b_2),$ $\\dots,$ $(a_n,b_n)$ be all the ordered pairs $(a,b)$ of complex numbers with $a^2+b^2\\neq 0,$\n\\[a+\\frac{10b}{a^2+b^2}=5, \\quad \\text{and} \\quad b+\\frac{10a}{a^2+b^2}=4.\\]Find $a_1 + b_1 + a_2 + b_2 + \\dots + a_n + b_n.$","level":"Level 5","type":"Intermediate Algebra"}

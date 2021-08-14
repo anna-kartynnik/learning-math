@@ -1,0 +1,1 @@
+{"problem":"Find the number of ordered triples $(x,y,z)$ of real numbers that satisfy\n\\begin{align*}\nx + y - z &= 0, \\\\\nxz - xy + yz &= 27, \\\\\nxyz &= 54.\n\\end{align*}","level":"Level 4","type":"Intermediate Algebra"}

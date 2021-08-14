@@ -1,0 +1,1 @@
+{"problem":"Find the number of solutions to\n\\[\\frac{1}{\\sin^2 \\theta} - \\frac{1}{\\cos^2 \\theta} - \\frac{1}{\\tan^2 \\theta} - \\frac{1}{\\cot^2 \\theta} - \\frac{1}{\\sec^2 \\theta} - \\frac{1}{\\csc^2 \\theta} = -3\\]in the interval $0 \\le \\theta \\le 2 \\pi.$","level":"Level 3","type":"Precalculus"}

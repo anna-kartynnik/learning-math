@@ -1,0 +1,1 @@
+{"problem":"Find the greatest common divisor of 91 and 72.","level":"Level 2","type":"Prealgebra","solution":"1","explanation":"$91 = 7^1 \\cdot 13^1$ and $72 = 2^3 \\cdot 3^2$, so gcd(91, 72) = $\\boxed{1}$.","equation":"91 = 7**1 * 13**1 ; 72 = 2**3 * 3**2"}

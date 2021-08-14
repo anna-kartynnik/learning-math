@@ -1,0 +1,1 @@
+{"problem":"Find the number of ordered triples $(x,y,z)$ of positive real numbers such that\n\\[\\left( x + \\frac{1}{y} \\right) \\left( y + \\frac{1}{z} \\right) \\left( z + \\frac{1}{x} \\right) = 8.\\]","level":"Level 3","type":"Intermediate Algebra"}

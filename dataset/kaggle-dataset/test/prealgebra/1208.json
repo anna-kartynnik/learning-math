@@ -1,0 +1,1 @@
+{"problem":"How many rectangles are in this figure? Each angle is a right angle.\n\n[asy]\nunitsize(0.06inch);\ndraw((0,0)--(0,-10)--(10,-10)--(10,0)--cycle);\ndraw((5,0)--(5,-10));\ndraw((0,-5)--(10,-5));\ndraw((5,-5)--(15,-5)--(15,-15)--(5,-15)--cycle);\ndraw((10,-5)--(10,-15));\ndraw((5,-10)--(15,-10));\n[\/asy]","level":"Level 5","type":"Prealgebra"}

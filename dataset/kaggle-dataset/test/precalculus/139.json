@@ -1,0 +1,1 @@
+{"problem":"Find the smallest positive rational number $r$ such that\n\\[\\sum_{k=1}^{35}\\sin (5k)^\\circ = \\tan r^\\circ.\\]","level":"Level 5","type":"Precalculus"}

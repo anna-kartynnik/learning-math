@@ -1,0 +1,1 @@
+{"problem":"Consider the polynomials $P(x) = x^6-x^5-x^3-x^2-x$ and $Q(x)=x^4-x^3-x^2-1$.  Given that $z_1, z_2, z_3$, and $z_4$ are the roots of $Q(x)=0$, find $P(z_1)+P(z_2)+P(z_3)+P(z_4).$","level":"Level 5","type":"Intermediate Algebra"}

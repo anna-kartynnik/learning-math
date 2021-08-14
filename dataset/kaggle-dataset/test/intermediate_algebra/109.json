@@ -1,0 +1,1 @@
+{"problem":"Find all the values of $a$ for which the equations\n\\begin{align*}\nx^2 + ax + 1 &= 0, \\\\\nx^2  - x - a &= 0\n\\end{align*}have a common real root.  Enter all the possible values, separated by commas.","level":"Level 4","type":"Intermediate Algebra"}

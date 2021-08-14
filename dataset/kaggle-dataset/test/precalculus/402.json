@@ -1,0 +1,1 @@
+{"problem":"Let $a = e^{4 \\pi i\/5}$ and $b = e^{2 \\pi i\/17}.$  Compute the value of the product\n\\[(a + b)(a + b^{16})(a^2 + b^2)(a^2 + b^{15})(a^3 + b^8)(a^3 + b^9)(a^4 + b^4)(a^4 + b^{13}).\\]","level":"Level 2","type":"Precalculus"}

@@ -1,0 +1,1 @@
+{"problem":"The points $(0,0,0),$ $(a,1,1),$ $(1,b,1),$ and $(1,1,c)$ are coplanar, where $a \\neq 1,$ $b \\neq 1,$ and $c \\neq 1.$  Compute\n\\[\\frac{1}{1 - a} + \\frac{1}{1 - b} + \\frac{1}{1 - c}.\\]","level":"Level 2","type":"Precalculus"}

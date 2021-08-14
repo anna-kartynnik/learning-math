@@ -1,0 +1,1 @@
+{"problem":"Let $k$ be the smallest positive integer such that the binomial coefficient $\\binom{10^9}{k}$ is less than the binomial coefficient $\\binom{10^9 + 1}{k - 1}$.  Let $a$ be the first (from the left) digit of $k$ and let $b$ be the second (from the left) digit of $k$.  What is the value of $10a + b$?","level":"Level 5","type":"Intermediate Algebra"}

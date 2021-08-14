@@ -1,0 +1,1 @@
+{"problem":"Let $f(n)$ return the number of times $n$ appears in Pascal's Triangle. For example, $f(3) = 2$ and $f(4) = 2$. If $n$ is a positive integer, what is the minimum value of $f(n)$?","level":"Level 2","type":"Counting & Probability"}

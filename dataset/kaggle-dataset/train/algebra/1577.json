@@ -1,0 +1,1 @@
+{"problem":"Simplify $(3-2i)-(5-2i)$.","level":"Level 2","type":"Algebra","solution":"-2","explanation":"$(3-2i)- (5-2i) = 3-2i -5+2i = (3-5) + (-2i+2i) = \\boxed{-2}$.","equation":" ( 3 - 2i ) -  ( 5 - 2i )  = 3 - 2i - 5 + 2i =  ( 3 - 5 )  +  ( - 2i + 2i )  =  - 2"}

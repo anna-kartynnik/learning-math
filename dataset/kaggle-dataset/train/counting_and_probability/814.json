@@ -1,0 +1,1 @@
+{"problem":"Compute $\\dbinom{133}{133}$.","level":"Level 1","type":"Counting & Probability","solution":"1","explanation":"$\\dbinom{133}{133}=\\dbinom{133}{0}=\\boxed{1}.$","equation":"\\dbinom133133 = \\dbinom1330 = 1."}

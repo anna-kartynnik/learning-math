@@ -1,0 +1,1 @@
+{"problem":"Let $\\mathbf{v}_1,$ $\\mathbf{v}_2,$ $\\dots,$ $\\mathbf{v}_k$ be unit vectors such that\n\\[\\mathbf{v}_1 + \\mathbf{v}_2 + \\dots + \\mathbf{v}_k = \\begin{pmatrix} 6 \\\\ -5 \\end{pmatrix}.\\]Find the smallest possible value of $k.$\n\nNote: A unit vector is a vector of magnitude 1.","level":"Level 4","type":"Precalculus"}

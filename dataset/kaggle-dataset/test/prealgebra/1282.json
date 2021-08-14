@@ -1,0 +1,1 @@
+{"problem":"In the diagram, what is the perimeter of $\\triangle PQR$?\n[asy]\ndraw((0,0)--(28,0)--(8,15)--cycle);\nlabel(\"$P$\",(0,0),SW);\nlabel(\"$Q$\",(8,15),NW);\nlabel(\"$R$\",(28,0),SE);\ndraw((8,15)--(8,0));\ndraw((9,0)--(9,1)--(8,1));\nlabel(\"$8$\",(4,0),S); label(\"$20$\",(18,0),S); label(\"$25$\",(18,8),NE);\n[\/asy]","level":"Level 4","type":"Prealgebra"}

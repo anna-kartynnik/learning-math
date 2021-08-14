@@ -1,0 +1,1 @@
+{"problem":"Let \\[A = \\lceil \\log_2 2 \\rceil + \\lceil \\log_2 3 \\rceil + \\dots + \\lceil \\log_2 1000 \\rceil\\]and \\[B =  \\lfloor \\log_2 2 \\rfloor + \\lfloor \\log_2 3 \\rfloor + \\dots + \\lfloor \\log_2 1000 \\rfloor.\\]Compute $A-B.$","level":"Level 5","type":"Intermediate Algebra"}

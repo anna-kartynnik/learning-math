@@ -1,0 +1,1 @@
+{"problem":"Let \\[f(x) =\n\\begin{cases}\nx^2+9 &\\text{if }x<-5, \\\\\n3x-8&\\text{if }x\\ge-5.\n\\end{cases}\n\\]If $f(x)=10$, find the sum of all possible values of $x$.","level":"Level 4","type":"Algebra"}

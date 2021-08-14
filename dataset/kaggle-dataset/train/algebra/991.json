@@ -1,0 +1,1 @@
+{"problem":"Evaluate $y(y-3x)$ for $x=3$ and $y=0$.","level":"Level 1","type":"Algebra","solution":"0","explanation":"Since 0 times anything is 0, when $y=0$, we have $y(y-3x) = 0(y-3x) = \\boxed{0}$.","equation":"y = 0 ; y ( y - 3x )  = 0 * ( y - 3x )  = 0"}

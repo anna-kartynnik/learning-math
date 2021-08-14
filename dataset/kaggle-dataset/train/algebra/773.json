@@ -1,0 +1,1 @@
+{"problem":"What is the sum of all values of $x$ that are solutions to the equation $x^2 = 7x - 12$?","level":"Level 2","type":"Algebra","solution":"7","explanation":"We rewrite the equation as $x^2 - 7x + 12 = 0$.  The sum of the solutions to this equation are $-\\frac{-7}{1} = \\boxed{7}$.","equation":"x**2 - 7x + 12 = 0 ;  - \\frac - 71 = 7"}

@@ -1,0 +1,1 @@
+{"problem":"Given that\n\\begin{align*}\n\\cos x + \\cos y + \\cos z &= 0, \\\\\n\\sin x + \\sin y + \\sin z &= 0,\n\\end{align*}find\n\\begin{align*}\n&\\tan^2 x + \\tan^2 y + \\tan^2 z - (\\tan^2 x \\tan^2 y + \\tan^2 x \\tan^2 z + \\tan^2 y \\tan^2 z) \\\\\n&\\quad  - 3 \\tan^2 x \\tan^2 y \\tan^2 z.\n\\end{align*}","level":"Level 5","type":"Precalculus"}

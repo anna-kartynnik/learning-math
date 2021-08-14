@@ -11,12 +11,11 @@ import os
 import time
 import re
 
-from utils.utils import last_boxed_only, _clean_numbers, last_boxed_only_string, only_until_first_boxed_from_tokens
-
 from multiprocessing import Manager
 
 from torch.multiprocessing import Pool
 
+from utils.utils import last_boxed_only, _clean_numbers, last_boxed_only_string, only_until_first_boxed_from_tokens
 
 # from dataset.base_math_dataset import BaseMathDataset
 def tryint(s):

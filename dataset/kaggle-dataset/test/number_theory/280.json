@@ -1,0 +1,1 @@
+{"problem":"If $$\\begin{array}{@{}l@{\\;}l@{}l@{}l} && & P_b \\\\ & \\times & & P_b \\\\ \\cline{2-4} & & 3 & 1_b, \\\\ \\end{array} $$where $P$ and $b$ represent two distinct digits 0-9 and $P$ is one less than $b$, what is the value of the base $b$?","level":"Level 4","type":"Number Theory"}

@@ -1,0 +1,1 @@
+{"problem":"Compute $\\sqrt{2^2\\cdot 3^4}$.","level":"Level 2","type":"Prealgebra","solution":"18","explanation":"Rewriting $2^2\\cdot 3^4$ as $(2\\cdot3^2)^2$ shows us that $\\sqrt{2^2\\cdot 3^4}=\\sqrt{(2\\cdot3^2)^2}=2\\cdot3^2=2\\cdot9=\\boxed{18}$.","equation":"\\sqrt2**2 * 3**4 = \\sqrt ( 2 * 3**2 ) **2 = 2 * 3**2 = 2 * 9 = 18"}

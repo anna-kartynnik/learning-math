@@ -1,0 +1,1 @@
+{"problem":"Find the value of $x$ such that $\\sqrt{x - 2} = 8$.","level":"Level 2","type":"Prealgebra","solution":"66","explanation":"Squaring both sides of the equation $\\sqrt{x - 2} = 8$, we get $x - 2 = 8^2 = 64$, so $x = 64 + 2 = \\boxed{66}$.","equation":"\\sqrtx - 2 = 8 ; x - 2 = 8**2 = 64 ; x = 64 + 2 = 66"}

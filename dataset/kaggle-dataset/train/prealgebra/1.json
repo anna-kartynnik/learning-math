@@ -1,0 +1,1 @@
+{"problem":"Find the area in square feet of a square with a perimeter of 32ft.","level":"Level 1","type":"Prealgebra","solution":"64","explanation":"If the perimeter of the square is $32$ feet, then the length of each side is $\\frac{32}{4}=8$ feet. That makes the area of the square $8^2=\\boxed{64}$ square feet.","equation":" ( ( 32 ) \/ ( 4 ) ) = 8 ; 8**2 = 64"}

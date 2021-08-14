@@ -1,0 +1,1 @@
+{"problem":"Find $24^{-1} \\pmod{11^2}$. That is, find the residue $b$ for which $24b \\equiv 1\\pmod{11^2}$.\n\nExpress your answer as an integer from $0$ to $11^2-1$, inclusive.","level":"Level 5","type":"Number Theory"}

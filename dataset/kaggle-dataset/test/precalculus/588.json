@@ -1,0 +1,1 @@
+{"problem":"Let $a = \\frac{\\pi}{2008}$. Find the smallest positive integer $n$ such that\n\\[\\sum_{k = 1}^n 2 \\cos (k^2 a) \\sin (ka)\\]is an integer.","level":"Level 4","type":"Precalculus"}

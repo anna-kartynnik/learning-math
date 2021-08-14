@@ -1,0 +1,1 @@
+{"problem":"How many pairs of positive integers $(a,b)$ are there such that $\\gcd(a,b)=1$ and \\[ \\frac{a}{b}+\\frac{14b}{9a}\n\\]is an integer?","level":"Level 5","type":"Number Theory"}

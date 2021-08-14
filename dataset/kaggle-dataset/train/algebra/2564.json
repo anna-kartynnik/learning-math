@@ -1,0 +1,1 @@
+{"problem":"Compute the value of $252^2 - 248^2$.","level":"Level 1","type":"Algebra","solution":"2000","explanation":"$252^2-248^2$ can also be expressed as $(252+248)(252-248)$. Simpifying, we obtain $500\\cdot4 = \\boxed{2000}$.","equation":"500 * 4 = 2000"}

@@ -1,0 +1,1 @@
+{"problem":"What is the smallest three-digit number in Pascal's triangle?","level":"Level 4","type":"Counting & Probability","solution":"100","explanation":"Every positive integer appears in Pascal's triangle!  The number 100 appears in the row that starts 1, 100.  So, the answer is $\\boxed{100}$.  Tricky, tricky!","equation":"100"}

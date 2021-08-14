@@ -1,0 +1,1 @@
+{"problem":"If $\\sqrt{5+n}=7$, then what is the value of $n$?","level":"Level 2","type":"Prealgebra","solution":"44","explanation":"Since $\\sqrt{5+n}=7$ and $7=\\sqrt{49}$, then $5+n=49$, so $n=\\boxed{44}$.","equation":"\\sqrt5 + n = 7 ; 7 = \\sqrt49 ; 5 + n = 49 ; n = 44"}

@@ -1,0 +1,1 @@
+{"problem":"Find the value of the following expression:\n\n$$\\left| \\, |{ -|{-1 + 1}| - 1 }| + 1\\right|.$$","level":"Level 2","type":"Algebra","solution":"2","explanation":"We calculate as follows: $$|\\,|{-|{-1+1}|-1}|+1| = \\left|\\, |0-1|+1\\right| = |1+1| = \\boxed{2}$$","equation":"2"}

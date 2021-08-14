@@ -1,0 +1,1 @@
+{"problem":"If $a,b,c$ are positive integers less than $13$ such that \\begin{align*}\n2ab+bc+ca&\\equiv 0\\pmod{13}\\\\\nab+2bc+ca&\\equiv 6abc\\pmod{13}\\\\\nab+bc+2ca&\\equiv 8abc\\pmod {13}\n\\end{align*}then determine the remainder when $a+b+c$ is divided by $13$.","level":"Level 5","type":"Number Theory"}

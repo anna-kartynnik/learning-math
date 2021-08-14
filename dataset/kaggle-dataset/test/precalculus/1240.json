@@ -1,0 +1,1 @@
+{"problem":"Find the number of ordered quadruples $(a,b,c,d)$ of real numbers such that\n\\[\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}^2 = \\begin{pmatrix} c & a \\\\ d & b \\end{pmatrix}.\\]","level":"Level 5","type":"Precalculus"}

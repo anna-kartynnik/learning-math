@@ -1,0 +1,1 @@
+{"problem":"How many distinct prime factors does 56 have?","level":"Level 2","type":"Prealgebra","solution":"2","explanation":"Prime factorize $56=8\\cdot7=2^3\\cdot 7$.  Fifty-six has $\\boxed{2}$ prime factors: 2 and 7.","equation":"56 = 8 * 7 = 2**3 * 7"}

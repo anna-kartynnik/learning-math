@@ -1,0 +1,1 @@
+{"problem":"Let $f : \\mathbb{R} \\to \\mathbb{R}$ be a function such that $f(5) = 3$ and\n\\[f(4xy) = 2y[f(x + y) + f(x - y)]\\]for all real numbers $x$ and $y.$  Find $f(2015).$","level":"Level 5","type":"Intermediate Algebra"}

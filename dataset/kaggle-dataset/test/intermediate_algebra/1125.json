@@ -1,0 +1,1 @@
+{"problem":"Let $g(x) = x^2 - 11x + 30,$ and let $f(x)$ be a polynomial such that\n\\[g(f(x)) = x^4 - 14x^3 + 62x^2 - 91x + 42.\\]Find the sum of all possible values of $f(10^{100}).$","level":"Level 5","type":"Intermediate Algebra"}

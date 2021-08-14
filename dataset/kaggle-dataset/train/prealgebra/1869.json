@@ -1,0 +1,1 @@
+{"problem":"Find $3 \\cdot 5 \\cdot 7 + 15 \\div 3.$","level":"Level 1","type":"Prealgebra","solution":"110","explanation":"Recall that multiplications and divisions should be done before addition. So \\begin{align*}3 \\cdot 5 \\cdot 7 + 15 \\div 3 &= (3 \\cdot 5 \\cdot 7) + (15 \\div 3) \\\\ &= 105 + 5 = \\boxed{110}.\\end{align*}","equation":"110"}

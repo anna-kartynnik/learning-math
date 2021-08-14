@@ -1,0 +1,1 @@
+{"problem":"Find the integer $n$, $0 \\le n \\le 6$, such that \\[n \\equiv 100000 \\pmod{7}.\\]","level":"Level 3","type":"Number Theory","solution":"5","explanation":"Since $100000 \\equiv 5 \\pmod{7}$, the integer $n$ we seek is $n = \\boxed{5}$.","equation":"n = 5"}

@@ -1,0 +1,1 @@
+{"problem":"Solve the equation $27 = 3(9)^{x-1}$ for $x.$","level":"Level 1","type":"Algebra","solution":"2","explanation":"Dividing both sides by 3, we quickly note that $ 9 = 9^{x-1} \\rightarrow 1 = x-1 \\rightarrow x = \\boxed{2}$.","equation":" 9 = 9**x - 1 arrow 1 = x - 1 arrow x = 2"}

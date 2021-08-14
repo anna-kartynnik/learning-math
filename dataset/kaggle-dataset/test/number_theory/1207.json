@@ -1,0 +1,1 @@
+{"problem":"Suppose that $\\overline{abcd}$ is a four-digit integer with no digits equal to zero such that $\\overline{ab}$, $\\overline{bc}$, and $\\overline{cd}$ are distinct integers that each divide into $\\overline{abcd}$. Find the smallest possible value of $\\overline{abcd}$.","level":"Level 5","type":"Number Theory"}

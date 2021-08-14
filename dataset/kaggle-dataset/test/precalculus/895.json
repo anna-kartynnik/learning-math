@@ -1,0 +1,1 @@
+{"problem":"Let $\\mathbf{b} = \\begin{pmatrix} -1 \\\\ 4 \\\\ 6 \\end{pmatrix}$ and $\\mathbf{c} = \\begin{pmatrix} 2 \\\\ -7 \\\\ -10 \\end{pmatrix}.$  Find the maximum value of\n\\[\\mathbf{c} \\cdot (\\mathbf{a} \\times \\mathbf{b}),\\]where $\\mathbf{a}$ is a unit vector.","level":"Level 4","type":"Precalculus"}

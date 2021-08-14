@@ -1,0 +1,1 @@
+{"problem":"There is a polynomial $P$ such that for every real number $x$,\n\\[\n  x^{512} + x^{256} + 1 = (x^2 + x + 1) P(x).\n\\]When $P$ is written in standard polynomial form, how many of its coefficients are nonzero?","level":"Level 5","type":"Intermediate Algebra"}

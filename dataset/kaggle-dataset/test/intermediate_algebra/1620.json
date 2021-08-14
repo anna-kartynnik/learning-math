@@ -1,0 +1,1 @@
+{"problem":"Let $a,$ $b,$ and $c$ be real numbers such that $ab + ac + bc = 0$ and $(a + b + c + 1)^2 = abc.$  Find all possible values of\n\\[(ab - c)(ac - b)(bc - a).\\]Enter the possible values, separated by commas.  For example, if you think the possible values are 3, 4, and 5, enter \"3, 4, 5\", without the quotation marks.","level":"Level 5","type":"Intermediate Algebra"}

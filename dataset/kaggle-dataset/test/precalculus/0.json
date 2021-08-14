@@ -1,0 +1,1 @@
+{"problem":"Let $\\mathbf{a}$ and $\\mathbf{b}$ be vectors such that\n\\[\\mathbf{v} = \\operatorname{proj}_{\\mathbf{a}} \\mathbf{v} + \\operatorname{proj}_{\\mathbf{b}} \\mathbf{v}\\]for all vectors $\\mathbf{v}.$  Enter all possible values of $\\mathbf{a} \\cdot \\mathbf{b},$ separated by commas.","level":"Level 4","type":"Precalculus"}

@@ -1,0 +1,1 @@
+{"problem":"Simplify $\\sqrt{7\\cdot 2}\\cdot \\sqrt{2^3\\cdot 7^3}$.","level":"Level 4","type":"Prealgebra","solution":"196","explanation":"We have:\n\n$\\sqrt{7\\cdot 2}\\cdot \\sqrt{2^3\\cdot 7^3}=\\sqrt{2^4\\cdot 7^4}=\\sqrt{14^4}=14^2=\\boxed{196}$.","equation":"\\sqrt7 * 2 * \\sqrt2**3 * 7**3 = \\sqrt2**4 * 7**4 = \\sqrt14**4 = 14**2 = 196"}

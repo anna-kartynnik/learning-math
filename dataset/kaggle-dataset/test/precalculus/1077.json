@@ -1,0 +1,1 @@
+{"problem":"In triangle $ABC,$ $D$ and $E$ are on side $\\overline{BC}$ such that $BD = DE = EC.$  If $x = \\angle BAD,$ $y = \\angle DAE,$ and $z = \\angle EAC,$ then find\n\\[\\frac{\\sin (x + y) \\sin (y + z)}{\\sin x \\sin z}.\\]","level":"Level 5","type":"Precalculus"}

@@ -1,0 +1,1 @@
+{"problem":"Let $x_1=97,$ and for $n>1,$ define $x_n=\\frac{n}{x_{n-1}}.$ Calculate $x_1x_2 \\cdots x_8.$","level":"Level 3","type":"Intermediate Algebra"}

@@ -1,0 +1,1 @@
+{"problem":"Evaluate $\\frac{3+x(3+x)-3^2}{x-3+x^2}$ for $x=-2$.","level":"Level 2","type":"Algebra","solution":"8","explanation":"$\\frac{3+x(3+x)-3^2}{x-3+x^2}=\\frac{3+(-2)(3+(-2))-3^2}{-2-3+(-2)^2}=\\frac{-8}{-1}=\\boxed{8}$","equation":"\\frac3 + x ( 3 + x ) - 3**2x - 3 + x**2 = \\frac3 + ( - 2 ) * ( 3 + ( - 2 ) ) - 3**2 - 2 - 3 + ( - 2 ) **2 = \\frac - 8 - 1 = 8"}

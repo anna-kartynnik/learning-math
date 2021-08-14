@@ -1,0 +1,1 @@
+{"problem":"Simplify: $(\\sqrt{5})^4$.","level":"Level 1","type":"Algebra","solution":"25","explanation":"We have  \\[(\\sqrt{5})^4 = (5^{\\frac12})^4 = 5 ^{\\frac12\\cdot 4} = 5^2 = \\boxed{25}.\\]","equation":"25"}

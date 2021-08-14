@@ -1,0 +1,1 @@
+{"problem":"The matrix\n\\[\\mathbf{A} = \\begin{pmatrix} 4 & 7 \\\\ c & d \\end{pmatrix}\\]has the property that if you are told the value of $\\|\\mathbf{v}\\|,$ then you can derive the value of $\\|\\mathbf{A} \\mathbf{v}\\|.$  Compute $|c - d|,$ assuming that $c$ and $d$ are real numbers.","level":"Level 5","type":"Precalculus"}

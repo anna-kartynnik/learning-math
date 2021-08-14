@@ -1,0 +1,1 @@
+{"problem":"Evaluate $(\\sqrt[6]{4})^9$.","level":"Level 2","type":"Algebra","solution":"8","explanation":"We have $$(\\sqrt[6]{4})^9 = (4^{1\/6})^9 = 4^{\\frac{1}{6}\\cdot 9} = 4^{3\/2} = (4^{1\/2})^3 = 2^3 = \\boxed{8}.$$","equation":"8", "equation2": "x = 4 ^ ( 9 / 6 )"}

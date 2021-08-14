@@ -1,0 +1,1 @@
+{"problem":"Evaluate $\\log_464$.","level":"Level 2","type":"Algebra","solution":"3","explanation":"We have $4^3=64$, so $\\log_4 64 = \\boxed{3}$.","equation":"4**3 = 64 ; \\log_4 64 = 3"}

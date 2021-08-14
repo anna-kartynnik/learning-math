@@ -1,0 +1,1 @@
+{"problem":"How many paths are there from $C$ to $D$ on the grid shown, if every step must be down or to the right?[asy]size(4cm,4cm);int w=5;int h=7;int i;for (i=0; i<h; ++i){draw((0,i) -- (w-1,i));}for (i=0; i<w; ++i){draw((i, 0)--(i,h-1));}label(\"D\", (w-1,0), SE);label(\"C\", (0,h-1), NW);[\/asy]","level":"Level 3","type":"Counting & Probability"}

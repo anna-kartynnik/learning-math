@@ -1,0 +1,1 @@
+{"problem":"Let $a$ and $b$ be nonzero real constants such that $|a| \\neq |b|.$  Find the number of distinct values of $x$ satisfying\n\\[\\frac{x - a}{b} + \\frac{x - b}{a} = \\frac{b}{x - a} + \\frac{a}{x - b}.\\]","level":"Level 4","type":"Intermediate Algebra"}

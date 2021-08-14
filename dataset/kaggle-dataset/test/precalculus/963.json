@@ -1,0 +1,1 @@
+{"problem":"The matrix $\\mathbf{M}$ satisfies\n\\[\\mathbf{M} \\begin{pmatrix} 2 \\\\ 1 \\end{pmatrix} = \\begin{pmatrix} 5 \\\\ 4 \\end{pmatrix} \\quad \\text{and} \\quad \\mathbf{M} \\begin{pmatrix} 3 \\\\ 0 \\end{pmatrix} = \\begin{pmatrix} 1 \\\\ 2 \\end{pmatrix} \\quad.\\]Find $\\det \\mathbf{M}.$","level":"Level 3","type":"Precalculus"}

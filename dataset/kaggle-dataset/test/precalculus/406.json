@@ -1,0 +1,1 @@
+{"problem":"The planes defined by\n\\begin{align*}\n-x + cy + bz &= 0, \\\\\ncx - y + az &= 0, \\\\\nbx + ay - z &= 0\n\\end{align*}all contain the same line.  Find all possible values of\n\\[a^2 + b^2 + c^2 + 2abc.\\]Enter all the possible values, separated by commas.","level":"Level 3","type":"Precalculus"}

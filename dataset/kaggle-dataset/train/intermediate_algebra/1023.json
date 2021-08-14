@@ -1,0 +1,1 @@
+{"problem":"Evaluate $|7-24i|$.","level":"Level 1","type":"Intermediate Algebra","solution":"25","explanation":"We have $|7-24i| = \\sqrt{7^2 + (-24)^2} = \\boxed{25}$.","equation":"|7 - 24i| = \\sqrt7**2 +  ( - 24 ) **2 = 25"}

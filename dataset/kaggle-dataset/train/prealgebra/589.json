@@ -1,0 +1,1 @@
+{"problem":"What is the value of $\\sqrt{36 \\times \\sqrt{16}}$?","level":"Level 2","type":"Prealgebra","solution":"12","explanation":"Calculating from the inside out, $$\\sqrt{36 \\times \\sqrt{16}} = \\sqrt{36 \\times 4} = \\sqrt{144} = \\boxed{12}.$$","equation":"12"}

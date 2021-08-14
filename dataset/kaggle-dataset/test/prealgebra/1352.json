@@ -1,0 +1,1 @@
+{"problem":"In the diagram, what is the value of $x?$ [asy]\ndraw((0,0)--(3,0)--(1,2.5)--cycle);\nlabel(\"$60^\\circ$\",(2.9,0),NW);\nlabel(\"$50^\\circ$\",(1.1,2.2),S);\nlabel(\"$x^\\circ$\",(0,0),SW);\ndraw((-1,0)--(0,0));\ndraw((0,0)--(-.5,-1.25));\n[\/asy]","level":"Level 1","type":"Prealgebra"}

@@ -1,0 +1,1 @@
+{"problem":"Let a sequence be defined as follows: $a_1 = 3,$ $a_2 = 3,$ and for $n \\ge 2,$\n\\[a_{n + 1} a_{n - 1} = a_n^2 + 2007.\\]Find the largest integer less than or equal to $\\frac{a_{2007}^2+a_{2006}^2}{a_{2007}a_{2006}}$.","level":"Level 5","type":"Intermediate Algebra"}

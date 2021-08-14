@@ -1,0 +1,1 @@
+{"problem":"For a matrix $\\mathbf{M},$ the trace of $\\mathbf{M}$ is defined as the sum of its diagonal elements.  For example,\n\\[\\operatorname{Tr} \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} = a + d.\\]Given $\\operatorname{Tr} (\\mathbf{A}) = 2$ and $\\operatorname{Tr} (\\mathbf{A}^2) = 30,$ find $\\det \\mathbf{A}.$","level":"Level 4","type":"Precalculus"}

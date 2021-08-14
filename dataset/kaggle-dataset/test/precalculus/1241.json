@@ -1,0 +1,1 @@
+{"problem":"Let $\\omega = e^{2 \\pi i\/1729}.$  Compute\n\\[\\sum_{k = 1}^{1728} \\frac{1}{1 + \\omega^k + \\omega^{2k} + \\omega^{3k}}.\\]","level":"Level 5","type":"Precalculus"}

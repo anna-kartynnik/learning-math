@@ -1,0 +1,1 @@
+{"problem":"Evaluate\n\\[\\begin{vmatrix} 0 & b - a & c - a \\\\ a - b & 0 & c - b \\\\ a - c & b - c & 0 \\end{vmatrix}.\\]","level":"Level 1","type":"Precalculus"}

@@ -1,0 +1,1 @@
+{"problem":"A base-10 integer $n$ can be represented as $32_a$ in one base and $23_b$ in another base, where $a$ and $b$ are any integer bases larger than 3. What is the smallest possible sum $a$+$b$?","level":"Level 4","type":"Number Theory"}

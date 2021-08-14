@@ -1,0 +1,1 @@
+{"problem":"Let $f(x)$ be a polynomial with real coefficients such that $f(0) =\n1$, $f(2) + f(3) = 125,$ and for all $x$, $f(x)f(2x^2) = f(2x^3 +\nx)$. Find $f(5)$.","level":"Level 5","type":"Intermediate Algebra"}

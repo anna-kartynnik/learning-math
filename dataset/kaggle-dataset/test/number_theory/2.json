@@ -1,0 +1,1 @@
+{"problem":"Given that $k$ is a positive integer less than 6, how many values can $k$ take on such that $3x \\equiv k \\pmod{6}$ has no solutions in $x$?","level":"Level 4","type":"Number Theory"}

@@ -1,0 +1,1 @@
+{"problem":"We are given the following numbers: 13, 14, 22, 52, 63, 74. Calculate $a$ by adding the numbers and then rounding the sum to the nearest ten. Calculate $b$ by first rounding each number to the nearest ten and then adding the rounded numbers. What is $a-b$?","level":"Level 4","type":"Prealgebra"}

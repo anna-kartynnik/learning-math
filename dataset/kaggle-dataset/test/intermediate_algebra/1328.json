@@ -1,0 +1,1 @@
+{"problem":"Find all positive integers $k$ with the following property:\n\nFor all positive integers $a,$ $b,$ and $c$ that make the roots of\n\\[ax^2 + bx + c = 0\\]rational, the roots of $4ax^2 + 12bx + kc = 0$ will also be rational.\n\nEnter all the possible values of $k,$ separated by commas.","level":"Level 5","type":"Intermediate Algebra"}

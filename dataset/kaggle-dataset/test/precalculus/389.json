@@ -1,0 +1,1 @@
+{"problem":"For positive real numbers $x,$ $y,$ and $z,$ none of which are equal to 1, find\n\\[\\begin{vmatrix} 1 & \\log_x y & \\log_x z \\\\ \\log_y x & 1 & \\log_y z \\\\ \\log_z x & \\log_z y & 1 \\end{vmatrix}.\\]","level":"Level 2","type":"Precalculus"}

@@ -1,0 +1,1 @@
+{"problem":"For a positive integer $m,$ let $f(m) = m^2 + m + 1$.  Find the largest positive integer $n$ such that\n\\[1000 f(1^2) f(2^2) \\dotsm f(n^2) \\ge f(1)^2 f(2)^2 \\dotsm f(n)^2.\\]","level":"Level 5","type":"Intermediate Algebra"}
