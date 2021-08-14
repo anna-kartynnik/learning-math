@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from sympy import S, Eq, solve
+from sympy import S, Eq, solve, solve_poly_system
 from sympy.parsing.sympy_parser import parse_expr
 import copy
 from expression_tree import *
@@ -28,8 +28,9 @@ def solve_linear_equation_with_multiple_unknown(equ_str_list, var_str):
             equ_list.append(parse_expr(equ_str_split[0]))
         else:
             equ_list.append(equ_str_split[0] + ' - ( ' + equ_str_split[1] + ' )')
-    ans = solve(equ_list, var_list)
-    # print("Solve:", ans)
+    #ans = solve(equ_list, var_list, rational=False)
+    ans = solve_poly_system(equ_list, var_list)
+    #print("Solve:", ans)
     if isinstance(ans, dict):
         return list(ans.values())
     elif isinstance(ans, list):
@@ -409,7 +410,10 @@ def compute_equations_result(test_res, test_tar, output_lang, num_list, num_stac
     test_ans = compute_expressions(test_expression, test_var_list)
     tar_ans = compute_expressions(tar_expression, tar_var_list)
 
-    if test_ans == "error" or test_ans == []:
+    #print('test_ans ', test_ans)
+    #print('tar_ans ', tar_ans)
+
+    if test_ans == 'error' or test_ans == [] or tar_ans is None or tar_ans == 'error' or tar_ans == []:
         return False, False, False, test_expression, tar_expression, None
     val_ac = True
     equ_ac = True
@@ -422,6 +426,7 @@ def compute_equations_result(test_res, test_tar, output_lang, num_list, num_stac
     change = False
     for t_a in test_ans:
         find = False
+        #print('tar_ans2 ', tar_ans)
         for a in tar_ans:
             try:
                 if abs(float(a) - float(t_a)) < 1e-1:

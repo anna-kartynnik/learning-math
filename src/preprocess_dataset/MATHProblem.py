@@ -204,14 +204,23 @@ class MATHProblem(object):
 
 	def clean_text(self, text, remove_dollars=False, replace_text_nums=False, remove_text=True):
 		text = text.replace('\n', ' ')
+		text = text.replace('\\qquad', ' ')
+		text = text.replace('\\dfrac', '\\frac')
 		text = text.replace('\\left(', '(')
 		text = text.replace('\\right)', ')')
 		text = text.replace('\\left[', '[')
 		text = text.replace('\\right]', ']')
 		text = text.replace('\\left{', '{')
 		text = text.replace('\\right}', '}')
+		text = text.replace('\\left\\(', '(')
+		text = text.replace('\\right\\)', ')')
+		text = text.replace('\\left\\[', '[')
+		text = text.replace('\\right\\]', ']')
+		text = text.replace('\\left\\{', '{')
+		text = text.replace('\\right\\}', '}')
 		text = text.replace('\\dots', '...')
 		text = text.replace('\\cdots', '...')
+		text = text.replace('\\ldots', '...')
 		text = text.replace('\\cdot', '*')
 		text = text.replace('\\times', '*')	
 		text = text.replace('\\!', '')
@@ -238,6 +247,8 @@ class MATHProblem(object):
 			# Remove \\text{...}
 			text = self.remove_latex_text(text)
 
+		text = self.replace_fracs(text)
+
 		return text
 
 	def remove_boxed(self, text):
@@ -258,7 +269,17 @@ class MATHProblem(object):
 			# print(re.search(re.compile('\d+'), boxed_match.group(0)))
 		return text
 
-	def replace_frac(self, text):
+	def replace_fracs(self, text):
+		text = self.replace_frac(text)
+		num_let_pattern_str = '(\d{1}|[a-zA-Z]{1})'
+		text = self.replace_frac(
+			text,
+			frac_pattern=re.compile('\\\\frac' + num_let_pattern_str + num_let_pattern_str),
+			number_in_frac_pattern=re.compile(num_let_pattern_str)
+		)
+		return text		
+
+	def replace_frac(self, text, frac_pattern=frac_pattern, number_in_frac_pattern=number_in_frac_pattern):
 		
 		changed_text = ''
 
@@ -266,7 +287,7 @@ class MATHProblem(object):
 		start = 0
 		while frac_match is not None:
 			#print(frac_match)
-			number_in_frac_match = number_in_frac_pattern.findall(frac_match.group(0))
+			number_in_frac_match = number_in_frac_pattern.findall(frac_match.group(0).replace('\\frac', ''))
 			#print(number_in_frac_match)
 			if len(number_in_frac_match) == 2:
 				changed_text += text[start:frac_match.start()] + '(' + number_in_frac_match[0] + \

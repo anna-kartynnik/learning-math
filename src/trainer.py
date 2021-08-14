@@ -1,6 +1,7 @@
 import argparse
 import random
 import time
+import traceback
 
 import numpy as np
 from tqdm import tqdm
@@ -8,7 +9,7 @@ import torch
 import torch.optim as optim
 
 from preprocess_dataset.data_processor import DataProcessor, prepare_folds, read_files
-from utils.gpu_utils import get_available_device
+from utils.gpu_utils import get_available_device, is_gpu_available
 from models import Graph2TreeModel
 from utils.calculate import compute_equations_result
 
@@ -24,7 +25,7 @@ class Trainer(object):
 		if self.args.seed is not None:
 			self._set_random_seed(self.args.seed)
 
-		self.device = get_available_device()
+		self.device = get_available_device(verbose=True)
 
 		self.data_processor = DataProcessor(self.samples, trim_min_count=self.args.min_freq)
 
@@ -123,11 +124,13 @@ class Trainer(object):
 
 			try:
 				loss = self.model(batch, self.data_processor.generate_num_ids, self.data_processor.output_lang,
-						var_nums=self.data_processor.var_nums)
+							var_nums=self.data_processor.var_nums)
 				loss.backward()
 				self.optimizer_step()
 				loss_to_print += loss
-			except:
+			except Exception as e:
+				print(e)
+				traceback.print_exc()
 				errors += 1
 
 		self.scheduler_step()
@@ -174,6 +177,7 @@ class Trainer(object):
 				eval_total += 1
 			except Exception as e:
 				print(e)
+				traceback.print_exc()
 				print('test_ans ', test_ans)
 				print('real_ans ', target_ans)
 				eval_total += 1
@@ -197,7 +201,7 @@ def main():
 	parser.add_argument('--init-weight', type=float, default=0.08, help='initailization weight')
 	parser.add_argument('--weight-decay', type=float, default=1e-5)
 	parser.add_argument('--max-epochs', type=int, default=10,help='number of full passes through the training data')
-	parser.add_argument('--min-freq', type=int, default=1,help='minimum frequency for vocabulary')
+	parser.add_argument('--min-freq', type=int, default=2,help='minimum frequency for vocabulary')
 	parser.add_argument('--grad-clip', type=int, default=5, help='clip gradients at this value')
 
 	parser.add_argument('--batch-size', type=int, default=8, help='the size of one mini-batch')
@@ -228,6 +232,8 @@ def main():
 
 	for fold_index, fold in enumerate(folds):
 		print('Starting fold {}'.format(fold_index + 1))
+		if is_gpu_available():
+			torch.cuda.empty_cache()
 		start = time.time()
 
 		train_pairs, test_pairs = fold

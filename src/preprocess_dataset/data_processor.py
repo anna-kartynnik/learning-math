@@ -107,6 +107,7 @@ class DataProcessor(object):
 			pair.input_tokens = input_cell
 			pair.output_tokens = output_cell
 			pair.num_stack = num_stack
+			pair.build_graph()
 
 			prepared_pairs.append(pair)
 
@@ -402,48 +403,6 @@ class DataProcessor(object):
 		#raise Exception('todo')
 		return pairs, temp_g, copy_nums
 
-class GraphBuilder(object):
-	def __init__(self):
-		super(GraphBuilder, self).__init__()
-
-	@staticmethod
-	def get_single_batch_graph(input_batch, input_length, group, num_value, num_pos):
-		batch_graph = []
-		max_len = max(input_length)
-		for i in range(len(input_length)):
-			input_batch_t = input_batch[i]
-			sentence_length = input_length[i]
-			quantity_cell_list = group[i]
-			num_list = num_value[i]
-			id_num_list = num_pos[i]
-			graph_attbet = GraphBuilder.get_attribute_between_graph(input_batch_t, max_len, id_num_list, sentence_length, quantity_cell_list)
-			# More graphs?
-			graph_total = [graph_attbet.tolist()]
-			batch_graph.append(graph_total)
-		batch_graph = np.array(batch_graph)
-		return batch_graph
-
-	@staticmethod
-	def get_attribute_between_graph(input_batch, max_len, id_num_list, sentence_length, quantity_cell_list, contain_zh_flag=True):
-		diag_ele = np.zeros(max_len)
-		for i in range(sentence_length):
-			diag_ele[i] = 1
-		graph = np.diag(diag_ele)
-
-		if not contain_zh_flag:
-			return graph
-		for i in id_num_list:
-			for j in quantity_cell_list:
-				if i < max_len and j < max_len and j not in id_num_list and abs(i-j) < 4:
-					graph[i][j] = 1
-					graph[j][i] = 1
-		for i in quantity_cell_list:
-			for j in quantity_cell_list:
-				if i < max_len and j < max_len:
-					if input_batch[i] == input_batch[j]:
-						graph[i][j] = 1
-						graph[j][i] = 1
-		return graph
 
 def read_files(dataroot, is_test=False):
 	all_filenames = sorted(glob.glob(dataroot), key=alphanum_key)

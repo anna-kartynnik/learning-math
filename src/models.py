@@ -7,8 +7,9 @@ import torch.nn.functional as F
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 
-#import dgl
-#from dgl.nn import GraphConv
+import dgl
+from dgl.nn import GraphConv
+import dgl.function as dgl_fn
 
 from utils.gpu_utils import is_gpu_available
 from utils.sau_models import *
@@ -17,15 +18,15 @@ from utils.sau_models import *
 MAX_OUTPUT_LENGTH = 45
 
 def copy_list(l):
-    r = []
-    if len(l) == 0:
-        return r
-    for i in l:
-        if type(i) is list:
-            r.append(copy_list(i))
-        else:
-            r.append(i)
-    return r
+	r = []
+	if len(l) == 0:
+		return r
+	for i in l:
+		if type(i) is list:
+			r.append(copy_list(i))
+		else:
+			r.append(i)
+	return r
 
 class TreeBeam:  # the class save the beam node
 	def __init__(self, score, node_stack, embedding_stack, left_childs, out):
@@ -40,21 +41,129 @@ class TreeEmbedding:  # the class save the tree
 		self.embedding = embedding
 		self.terminal = terminal
 
-class EncoderWithGNN(Seq2TreeEncoder):
-	def __init__(self, vocab_size, embedding_size, hidden_size):
-		#self.gcn = 
-		pass
+
+# Sends a message of node feature h.
+msg = dgl_fn.copy_src(src='h', out='m')
+
+def reduce(nodes):
+	"""Take an average over all neighbor node features hu and use it to
+	overwrite the original node feature."""
+	accum = torch.mean(nodes.mailbox['m'], 1)
+	return {'h': accum}
+
+class NodeApplyModule(nn.Module):
+	"""Update the node feature hv with ReLU(Whv+b)."""
+	def __init__(self, in_feats, out_feats, activation):
+		super(NodeApplyModule, self).__init__()
+		self.linear = nn.Linear(in_feats, out_feats)
+		self.activation = activation
+
+	def forward(self, node):
+		h = self.linear(node.data['h'])
+		h = self.activation(h)
+		return {'h' : h}
+
+class GCN(nn.Module):
+	def __init__(self, in_feats, out_feats, activation):
+		super(GCN, self).__init__()
+		self.apply_mod = NodeApplyModule(in_feats, out_feats, activation)
+
+	def forward(self, g, feature):
+		# Initialize the node features with h. 
+		g.ndata['h'] = feature
+		g.update_all(msg, reduce)
+		g.apply_nodes(func=self.apply_mod)
+		return g.ndata.pop('h')
+
+# class GCN(nn.Module):
+# 	def __init__(self, n_infeat, n_hidden, n_classes, n_layers=2): #, activation):
+# 		super(GCN, self).__init__()
+
+# 		self.layers = nn.ModuleList()
+# 		self.layers.append(GraphConv(n_infeat, n_hidden)) #, activation=activation))
+# 		for i in range(n_layers - 1):
+# 			self.layers.append(GraphConv(n_hidden, n_hidden)) #, activation=activation))
+# 		self.layers.append(GraphConv(n_hidden, n_classes))
+
+# 	def forward(self, graph, features):
+# 		print(features.shape)
+# 		print(graph.shape)
+# 		h = features
+# 		for i, layer in enumerate(self.layers):
+# 			h = layer(graph, h)
+# 		return h
+
+class PositionwiseFeedForward(nn.Module):
+    """Implements FFN equation."""
+    def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.1):
+        super(PositionwiseFeedForward, self).__init__()
+        self.w_1 = nn.Linear(in_dim, hidden_dim)
+        self.w_2 = nn.Linear(hidden_dim, out_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+
+class GraphModule(nn.Module):
+	def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.3):
+		super(GraphModule, self).__init__()
+		self.in_dim = in_dim
+		self.hidden_dim = hidden_dim
+		self.layer0 = GCN(in_dim, hidden_dim, F.relu)
+		self.layer1 = GCN(hidden_dim, hidden_dim, F.relu)
+		self.linear1 = nn.Linear(hidden_dim, out_dim)
+		self.feed_forward = PositionwiseFeedForward(in_dim, hidden_dim, out_dim, dropout)
+
+	def forward(self, g, features):
+		# For undirected graphs, in_degree is the same as
+		# out_degree.
+		h = features.view(-1, self.in_dim) #g.in_degrees().view(-1, 1).float()
+		#print(h.shape)
+		h = self.layer0(g, h)
+		#print(h.shape)
+		h = self.layer1(g, h)
+		#print(h.shape)
+		g.ndata['h'] = h
+		#print(features.shape)
+		hg = h.view(g.batch_size, -1, self.hidden_dim) + features.view(g.batch_size, -1, self.hidden_dim) # dgl.mean_nodes(g, 'h')
+		#print(hg.shape)
+		return self.feed_forward(hg) + hg #self.classify(hg)
+
+class EncoderWithGNN(nn.Module):
+	def __init__(self, vocab_size, embedding_size, hidden_size, n_layers):
+		super(EncoderWithGNN, self).__init__()
+
+		self.hidden_size = hidden_size
+		self.embedding = Seq2TreeEncoder(
+			vocab_size=vocab_size,
+			embedding_size=embedding_size,
+			hidden_size=hidden_size,
+			n_layers=n_layers,
+		)
+		#self.layer0 = GCN(hidden_size, hidden_size, F.relu)
+		#self.layer1 = GCN(hidden_size, hidden_size, F.relu)
+		self.gcn = GraphModule(hidden_size, hidden_size, hidden_size)
+
+	def forward(self, input_tokens, input_lengths, batch_graph):
+		pade_outputs, problem_output = self.embedding(input_tokens, input_lengths)
+		#print(pade_outputs.shape)
+		#print(batch_graph.batch_num_nodes())
+		#print(batch_graph.in_degrees().view(-1, 1).shape)
+		pade_outputs = self.gcn(batch_graph, pade_outputs)
+		#print(pade_outputs.shape)
+		pade_outputs = pade_outputs.transpose(0, 1)
+		return pade_outputs, problem_output
 
 class Graph2TreeModel(nn.Module):
 	def __init__(self, encoder_input_size, embedding_size, hidden_size, n_layers, op_nums,
 		predictor_input_size, var_nums):
 		super(Graph2TreeModel, self).__init__()
 
-		self.encoder = Seq2TreeEncoder(
-			vocab_size=encoder_input_size,
-			embedding_size=embedding_size,
-			hidden_size=hidden_size,
-			n_layers=n_layers,
+		self.encoder = EncoderWithGNN(
+			encoder_input_size,
+			embedding_size,
+			hidden_size,
+			n_layers,
 		)
 		self.predictor = Seq2TreePrediction(
 			vocab_size=predictor_input_size,
@@ -84,6 +193,7 @@ class Graph2TreeModel(nn.Module):
 		nums_batch, num_size_batch = batch.num_batch, batch.num_size_batch
 		nums_stack_batch, num_pos_batch = batch.num_stack_batch, batch.num_pos_batch
 		ans_batch = batch.answers_batch
+		graph_batch = batch.graph_batch
 
 		# sequence mask for attention
 		seq_mask = []
@@ -105,7 +215,7 @@ class Graph2TreeModel(nn.Module):
 		input_var = torch.LongTensor(input_batch).transpose(0, 1)
 
 		target = torch.LongTensor(output_batch).transpose(0, 1)
-		#batch_graph = torch.LongTensor(batch_graph)
+		#graph_batch = torch.LongTensor(graph_batch)
 
 		padding_hidden = torch.FloatTensor([0.0 for _ in range(self.predictor.hidden_size)]).unsqueeze(0)
 
@@ -122,9 +232,8 @@ class Graph2TreeModel(nn.Module):
 			seq_mask = seq_mask.cuda()
 			padding_hidden = padding_hidden.cuda()
 			num_mask = num_mask.cuda()
-			#batch_graph = batch_graph.cuda()
 
-		encoder_outputs, problem_output = self.encoder(input_var, input_lengths) #, batch_graph)
+		encoder_outputs, problem_output = self.encoder(input_var, input_lengths, graph_batch)
 
 		# Prepare input and output variables.
 		node_stacks = [[TreeNode(_)] for _ in problem_output.split(1, dim=0)]
@@ -207,10 +316,11 @@ class Graph2TreeModel(nn.Module):
 		semantic_alignment_loss = nn.MSELoss()
 		total_semanti_alignment_loss = 0
 		sa_len = len(all_sa_outputs)
-		for sa_pair in all_sa_outputs:
-			total_semanti_alignment_loss += semantic_alignment_loss(sa_pair[0], sa_pair[1])
-		# print(total_semanti_alognment_loss)
-		total_semanti_alignment_loss = total_semanti_alignment_loss / sa_len
+		if sa_len > 0:
+			for sa_pair in all_sa_outputs:
+				total_semanti_alignment_loss += semantic_alignment_loss(sa_pair[0], sa_pair[1])
+			# print(total_semanti_alognment_loss)
+			total_semanti_alignment_loss = total_semanti_alignment_loss / sa_len
 		# print(total_semanti_alognment_loss)
 
 		# op_target = target < num_start
@@ -264,7 +374,7 @@ class Graph2TreeModel(nn.Module):
 			all_outputs = encoder_outputs.contiguous() # B x S x H
 		else:
 			all_outputs = encoder_outputs.transpose(0, 1).contiguous()  # S x B x H
-
+		#print(all_outputs.shape)
 		all_embedding = all_outputs.view(-1, encoder_outputs.size(2))  # S x B x H -> (B x S) x H
 		all_num = all_embedding.index_select(0, indices)
 		all_num = all_num.view(batch_size, num_size, hidden_size)
@@ -274,6 +384,8 @@ class Graph2TreeModel(nn.Module):
 					  beam_size=5, var_nums=[], beam_search=True, max_length=MAX_OUTPUT_LENGTH):
 		input_batch, input_length = item.input_tokens, len(item.input_tokens)
 		num_pos = item.num_pos
+		graph_batch = item.graph
+
 		# sequence mask for attention
 		seq_mask = torch.ByteTensor(1, input_length).fill_(0)
 		# Turn padded arrays into (batch_size x max_len) tensors, transpose into (max_len x batch_size)
@@ -298,7 +410,7 @@ class Graph2TreeModel(nn.Module):
 			num_mask = num_mask.cuda()
 
 		# Run words through encoder
-		encoder_outputs, problem_output = self.encoder(input_var, [input_length])
+		encoder_outputs, problem_output = self.encoder(input_var, [input_length], graph_batch)
 
 		# Prepare input and output variables  # # root embedding B x 1
 		node_stacks = [[TreeNode(_)] for _ in problem_output.split(1, dim=0)]
