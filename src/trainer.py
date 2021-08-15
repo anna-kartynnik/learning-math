@@ -14,31 +14,29 @@ from models import Graph2TreeModel
 from utils.calculate import compute_equations_result
 
 
-
 class Trainer(object):
-	""""""
+	"""Trains the model."""
+
 	def __init__(self, args, samples):
 		super(Trainer, self).__init__()
 		self.args = args
 		self.samples = samples
 
 		if self.args.seed is not None:
-			self._set_random_seed(self.args.seed)
+			self.set_random_seed(self.args.seed)
 
 		self.device = get_available_device(verbose=True)
 
 		self.data_processor = DataProcessor(self.samples, trim_min_count=self.args.min_freq)
 
-
 	def initialize(self, train_pairs, test_pairs):
 		# Prepare data, get input/output languages
 		self.data_processor.initialize(train_pairs, test_pairs)
 
-		self._build_model()
-		self._build_optimizer()
+		self.build_model()
+		self.build_optimizer()
 
-	def _build_model(self):
-		""""""
+	def build_model(self):
 		op_nums = self.data_processor.output_lang.n_words - self.data_processor.copy_nums - 1 - len(self.data_processor.generate_nums)
 		print('output_lang ', self.data_processor.output_lang.index2word)
 		print('op_nums', op_nums)
@@ -54,7 +52,7 @@ class Trainer(object):
 		)
 		self.model.to(self.device)
 
-	def _build_optimizer(self):
+	def build_optimizer(self):
 		self.encoder_optimizer = optim.Adam(self.model.encoder.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.predictor_optimizer = optim.Adam(self.model.predictor.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.generator_optimizer = optim.Adam(self.model.generator.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
@@ -67,7 +65,7 @@ class Trainer(object):
 		self.merger_scheduler = optim.lr_scheduler.StepLR(self.merger_optimizer, step_size=20, gamma=0.5)
 		self.sem_align_scheduler = optim.lr_scheduler.StepLR(self.sem_align_optimizer, step_size=20, gamma=0.5)
 
-	def _set_random_seed(self, seed):
+	def set_random_seed(self, seed):
 		"""Sets seed for reproducibility."""
 		random.seed(seed)
 		np.random.seed(seed)
@@ -84,15 +82,15 @@ class Trainer(object):
 		self.encoder_optimizer.zero_grad()
 		self.predictor_optimizer.zero_grad()
 		self.generator_optimizer.zero_grad()
-		self.merger_optimizer.zero_grad()	
+		self.merger_optimizer.zero_grad()
 		self.sem_align_optimizer.zero_grad()
 
 	def optimizer_step(self):
 		self.encoder_optimizer.step()
 		self.predictor_optimizer.step()
 		self.generator_optimizer.step()
-		self.merger_optimizer.step()	
-		self.sem_align_optimizer.step()		
+		self.merger_optimizer.step()
+		self.sem_align_optimizer.step()
 
 	def train(self):
 		best_acc = (-1, -1)
@@ -137,6 +135,13 @@ class Trainer(object):
 
 		return loss_to_print / number_of_batches, errors
 
+	def canonical(self, value, digits=2):
+		try:
+			return round(float(value), ndigits=digits)
+		except ValueError:
+			# Conversion to `float` failed.
+			return np.nan
+
 	def eval(self, mode='val'):
 		self.model.eval()
 		start = time.time()
@@ -160,36 +165,37 @@ class Trainer(object):
 						test_item.nums, test_item.num_stack, ans_list=target_ans, tree=True, prefix=True)
 
 				if test_ans is not None and len(test_ans) > 0:
-					if round(float(test_ans[0]), ndigits=2) == round(float(target_ans[0]), ndigits=2):
+					if self.canonical(test_ans[0]) == self.canonical(target_ans[0]):
 						correct += 1
 
-
 				if val_ac:
-					print('val_ac is true (predicted) ', test_ans)
-					print('val_ac is true (real) ', target_ans)
+					print('The values computed from train and test expressions match')
 					value_ac += 1
 				if ans_ac:
-					print('ans_ac is true (predicted) ', test_ans)
-					print('ans_ac is true (real) ', target_ans)
+					print('The predicted answers match the correct ones')
 					answer_ac += 1
 				if equ_ac:
+					print('The predicted equations match the target ones')
 					equation_ac += 1
+				if val_ac or ans_ac or equ_ac:
+					print('Predicted:', test_ans, ', target:', target_ans)
 				eval_total += 1
+
 			except Exception as e:
-				print(e)
 				traceback.print_exc()
 				print('test_ans ', test_ans)
 				print('real_ans ', target_ans)
 				eval_total += 1
 				skipped += 1
 
-		print('{} value_ac accuracy = {:.3f}\n'.format(mode, float(value_ac) / eval_total))
-		print('{} answer_ac accuracy = {:.3f}\n'.format(mode, float(answer_ac) / eval_total))
-		print('{} equation_ac accuracy = {:.3f}\n'.format(mode, float(equation_ac) / eval_total))
-		print('{} correct = {:.3f}\n'.format(mode, float(correct) / eval_total))
-		print('{} skipped = {}\n'.format(mode, skipped))
-		print('val time: {} (in minutes)'.format((time.time() - start) / 60))
-		return float(correct) / eval_total
+		print('{} equation-derived answer accuracy = {:.3f}'.format(mode, float(value_ac) / eval_total))
+		print('{} known answer accuracy = {:.3f}'.format(mode, float(answer_ac) / eval_total))
+		print('{} equation match accuracy = {:.3f}'.format(mode, float(equation_ac) / eval_total))
+		accuracy = float(correct) / eval_total
+		print('{} correct answers = {:.3f}'.format(mode, accuracy))
+		print('{} skipped = {}'.format(mode, skipped))
+		print('Validation time: {:.2f} minutes'.format((time.time() - start) / 60))
+		return accuracy
 
 
 def main():
@@ -200,15 +206,15 @@ def main():
 	parser.add_argument('--seed', type=int, default=13, help='torch manual random number generator seed')
 	parser.add_argument('--init-weight', type=float, default=0.08, help='initailization weight')
 	parser.add_argument('--weight-decay', type=float, default=1e-5)
-	parser.add_argument('--max-epochs', type=int, default=10,help='number of full passes through the training data')
-	parser.add_argument('--min-freq', type=int, default=2,help='minimum frequency for vocabulary')
+	parser.add_argument('--max-epochs', type=int, default=10, help='number of full passes through the training data')
+	parser.add_argument('--min-freq', type=int, default=2, help='minimum frequency for vocabulary')
 	parser.add_argument('--grad-clip', type=int, default=5, help='clip gradients at this value')
 
 	parser.add_argument('--batch-size', type=int, default=8, help='the size of one mini-batch')
 	parser.add_argument('--embedding-size', type=int, default=128, help='TODO')
 	parser.add_argument('--hidden-size', type=int, default=512, help='TODO')
 	parser.add_argument('--encoder-layers', type=int, default=2, help='TODO')
-	
+
 	parser.add_argument('--beam-size', type=int, default=5, help='the beam size of beam search')
 	parser.add_argument("--beam-search", type=bool, default=True, help="whether to use beam search")
 
@@ -246,6 +252,6 @@ def main():
 		end = time.time()
 		print('total time for fold {}: {} minutes\n'.format(fold_index + 1, (end - start) / 60))
 
+
 if __name__ == '__main__':
 	main()
-
