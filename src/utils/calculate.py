@@ -4,8 +4,13 @@ from sympy import S, Eq, solve, solve_poly_system
 from sympy.parsing.sympy_parser import parse_expr
 import copy
 from expression_tree import *
+from wrapt_timeout_decorator import timeout
 
-# 方程形式为中缀表示，未知数字符串以空格分隔
+
+_TIMEOUT_SEC = 5
+
+
+@timeout(_TIMEOUT_SEC, use_signals=True)
 def solve_linear_equation_with_one_unknown(equ_str, var_str):
     x = S(var_str.split())
     equ_str_split = equ_str.split('=')
@@ -19,6 +24,7 @@ def solve_linear_equation_with_one_unknown(equ_str, var_str):
     return ans[0]
 
 
+@timeout(_TIMEOUT_SEC, use_signals=True)
 def solve_linear_equation_with_multiple_unknown(equ_str_list, var_str):
     var_list = S(var_str.split())
     equ_list = []
@@ -369,7 +375,7 @@ def compute_equations_result(test_res, test_tar, output_lang, num_list, num_stac
         test_ept.build_tree_from_prefix_expression(test)
         tar_ept = ExpressionTree()
         tar_ept.build_tree_from_prefix_expression(tar)
-    
+
     if not tree or (tree and infix):
         test_expression = test
         tar_expression = tar
