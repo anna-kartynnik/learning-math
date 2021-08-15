@@ -63,17 +63,25 @@ class NodeApplyModule(nn.Module):
 		h = self.activation(h)
 		return {'h' : h}
 
-class GCN(nn.Module):
-	def __init__(self, in_feats, out_feats, activation):
-		super(GCN, self).__init__()
-		self.apply_mod = NodeApplyModule(in_feats, out_feats, activation)
+class GCNBranch(nn.Module):
+	def __init__(self, in_feats, out_feats, dropout=0.5):
+		super(GCNBranch, self).__init__()
+		self.gc1 = GraphConv(in_feats, in_feats, allow_zero_in_degree=True)
+		self.relu = nn.ReLU()
+		self.dropout = nn.Dropout(p=dropout)
+		self.gc2 = GraphConv(in_feats, out_feats, allow_zero_in_degree=True)
 
 	def forward(self, g, feature):
-		# Initialize the node features with h. 
-		g.ndata['h'] = feature
-		g.update_all(msg, reduce)
-		g.apply_nodes(func=self.apply_mod)
-		return g.ndata.pop('h')
+		# # Initialize the node features with h. 
+		# g.ndata['h'] = feature
+		# g.update_all(msg, reduce)
+		# g.apply_nodes(func=self.apply_mod)
+		# return g.ndata.pop('h')
+		out = self.gc1(g, feature)
+		out = self.relu(out)
+		out = self.dropout(out)
+		out = self.gc2(g, out)
+		return out
 
 # class GCN(nn.Module):
 # 	def __init__(self, n_infeat, n_hidden, n_classes, n_layers=2): #, activation):
@@ -93,41 +101,50 @@ class GCN(nn.Module):
 # 			h = layer(graph, h)
 # 		return h
 
-class PositionwiseFeedForward(nn.Module):
-    """Implements FFN equation."""
-    def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.1):
-        super(PositionwiseFeedForward, self).__init__()
-        self.w_1 = nn.Linear(in_dim, hidden_dim)
-        self.w_2 = nn.Linear(hidden_dim, out_dim)
-        self.dropout = nn.Dropout(dropout)
+# class PositionwiseFeedForward(nn.Module):
+#     """Implements FFN equation."""
+#     def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.1):
+#         super(PositionwiseFeedForward, self).__init__()
+#         self.w_1 = nn.Linear(in_dim, hidden_dim)
+#         self.w_2 = nn.Linear(hidden_dim, out_dim)
+#         self.dropout = dropout
 
-    def forward(self, x):
-        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+#     def forward(self, x):
+#         return self.w_2(F.dropout(F.relu(self.w_1(x)), self.dropout, training=self.training))
 
 class GraphModule(nn.Module):
-	def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.3):
+	def __init__(self, in_dim, hidden_dim, out_dim, n_head=2, dropout=0.5):
 		super(GraphModule, self).__init__()
 		self.in_dim = in_dim
 		self.hidden_dim = hidden_dim
-		self.layer0 = GCN(in_dim, hidden_dim, F.relu)
-		self.layer1 = GCN(hidden_dim, hidden_dim, F.relu)
-		self.linear1 = nn.Linear(hidden_dim, out_dim)
-		self.feed_forward = PositionwiseFeedForward(in_dim, hidden_dim, out_dim, dropout)
+		self.branches = nn.ModuleList(GCNBranch(hidden_dim, hidden_dim // n_head, dropout) for _ in range(n_head))
+		self.feed_forward = nn.Sequential(
+			nn.Linear(hidden_dim, hidden_dim),
+			nn.ReLU(inplace=True),
+			nn.Dropout(dropout),
+			nn.Linear(hidden_dim, hidden_dim),
+		)
+		self.layer_norm = nn.LayerNorm(hidden_dim)
 
 	def forward(self, g, features):
 		# For undirected graphs, in_degree is the same as
 		# out_degree.
 		h = features.view(-1, self.in_dim) #g.in_degrees().view(-1, 1).float()
+		graphs = [g, g]
+		h = torch.cat([branch(graph, h) for branch, graph in zip(self.branches, graphs)], dim=-1).view_as(features)
+		h = features + self.layer_norm(h)
+		h = h + self.feed_forward(h)
+		return h.view(g.batch_size, -1, self.hidden_dim)
 		#print(h.shape)
-		h = self.layer0(g, h)
-		#print(h.shape)
-		h = self.layer1(g, h)
-		#print(h.shape)
-		g.ndata['h'] = h
-		#print(features.shape)
-		hg = h.view(g.batch_size, -1, self.hidden_dim) + features.view(g.batch_size, -1, self.hidden_dim) # dgl.mean_nodes(g, 'h')
-		#print(hg.shape)
-		return self.feed_forward(hg) + hg #self.classify(hg)
+		# h = self.layer0(g, h)
+		# #print(h.shape)
+		# h = self.layer1(g, h)
+		# #print(h.shape)
+		# g.ndata['h'] = h
+		# #print(features.shape)
+		# hg = h.view(g.batch_size, -1, self.hidden_dim) + features.view(g.batch_size, -1, self.hidden_dim) # dgl.mean_nodes(g, 'h')
+		# #print(hg.shape)
+		# return self.feed_forward(hg) + hg #self.classify(hg)
 
 class EncoderWithGNN(nn.Module):
 	def __init__(self, vocab_size, embedding_size, hidden_size, n_layers):

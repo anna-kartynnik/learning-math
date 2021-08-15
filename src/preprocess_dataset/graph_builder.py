@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 #import networkx as nx
 import dgl
 
@@ -27,7 +28,7 @@ class GraphBuilder(object):
 		return dgl.batch(batch_graph) #batch_graph
 
 	@staticmethod
-	def get_attribute_between_graph(input_batch, max_len, id_num_list, sentence_length, quantity_cell_list, contain_zh_flag=True):
+	def get_attribute_between_graph(input_tokens, max_len, id_num_list, sentence_length, quantity_cell_list):
 		# diag_ele = np.zeros(max_len)
 		# for i in range(sentence_length):
 		# 	diag_ele[i] = 1
@@ -48,27 +49,45 @@ class GraphBuilder(object):
 		# 				graph[j][i] = 1
 		# return GraphBuilder.get_dgl_graph(graph)
 
-		src_ids = []
-		dst_ids = []
-		for i in id_num_list:
-			for j in quantity_cell_list:
-				if i < max_len and j < max_len and j not in id_num_list and abs(i-j) < 4:
-					src_ids.append(i)
-					#src_ids.append(j)
-					dst_ids.append(j)
-					#dst_ids.append(i)
-		for i in quantity_cell_list:
-			for j in quantity_cell_list:
-				if i < max_len and j < max_len:
-					if input_batch[i] == input_batch[j]:
-						src_ids.append(i)
-						#src_ids.append(j)
-						dst_ids.append(j)
-						#dst_ids.append(i)
+		# src_ids = []
+		# dst_ids = []
+		# for i in id_num_list:
+		# 	for j in quantity_cell_list:
+		# 		if i < max_len and j < max_len and j not in id_num_list and abs(i-j) < 4:
+		# 			src_ids.append(i)
+		# 			#src_ids.append(j)
+		# 			dst_ids.append(j)
+		# 			#dst_ids.append(i)
+		# for i in quantity_cell_list:
+		# 	for j in quantity_cell_list:
+		# 		if i < max_len and j < max_len:
+		# 			if input_batch[i] == input_batch[j]:
+		# 				src_ids.append(i)
+		# 				#src_ids.append(j)
+		# 				dst_ids.append(j)
+		# 				#dst_ids.append(i)
 		#print(src_ids)
 		#print(dst_ids)
+
+		word_cells = set(quantity_cell_list) - set(id_num_list)
+		adj_matrix = torch.eye(sentence_length, dtype=torch.bool)
+		for w_pos in word_cells:
+			for q_pos in id_num_list:
+				if abs(w_pos - q_pos) < 4:
+					adj_matrix[w_pos, q_pos] = True
+					adj_matrix[q_pos, w_pos] = True
+
+		pos_indices = np.array(input_tokens)[quantity_cell_list]
+		for index1, pos1 in zip(pos_indices, quantity_cell_list):
+			for index2, pos2 in zip(pos_indices, quantity_cell_list):
+				if index1 == index2:
+					adj_matrix[pos1, pos2] = True
+					adj_matrix[pos2, pos1] = True
+
+		src_ids, dst_ids = np.transpose(np.nonzero(adj_matrix))
+
 		graph = dgl.graph((src_ids, dst_ids), num_nodes=max_len, device=get_available_device())
-		graph = dgl.add_self_loop(graph)
+		#graph = dgl.add_self_loop(graph)
 		return graph
 
 
