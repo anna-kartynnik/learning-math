@@ -51,6 +51,8 @@ def export_data(args):
         tokenizer = transformers.BigBirdTokenizer.from_pretrained('google/bigbird-roberta-base')
     elif args.tokenizer == 'gpt2':
         tokenizer = transformers.GPT2Tokenizer.from_pretrained('gpt2')
+    elif args.tokenizer == 't5':
+        tokenizer = transformers.T5Tokenizer.from_pretrained('t5-large')
 
 
     ## Get a list of all the training json files
