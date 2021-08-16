@@ -1,5 +1,12 @@
+"""Describes the models used for training.
+
+Some code is borrowed with modifications from: https://github.com/QinJinghui/SAU-Solver
+"""
+
+
 import math
 import copy
+import pdb
 
 import torch
 import torch.nn as nn
@@ -7,28 +14,23 @@ import torch.nn.functional as F
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 
+from transformers import BertModel, BertTokenizer
+
 import dgl
 from dgl.nn import GraphConv
 import dgl.function as dgl_fn
 
-from utils.gpu_utils import is_gpu_available
-from utils.sau_models import *
+from utils.gpu_utils import is_gpu_available, get_available_device
+from utils.sau_models import Seq2TreePrediction, Seq2TreeNodeGeneration, Seq2TreeSemanticAlignment, Seq2TreeSubTreeMerge, TreeNode
+from preprocess_dataset.data_utils import index_batch_to_words
+from preprocess_dataset.graph_builder import GraphBuilder
+from utils.utils import copy_list
 
 
 MAX_OUTPUT_LENGTH = 45
 
-def copy_list(l):
-	r = []
-	if len(l) == 0:
-		return r
-	for i in l:
-		if type(i) is list:
-			r.append(copy_list(i))
-		else:
-			r.append(i)
-	return r
-
-class TreeBeam:  # the class save the beam node
+class TreeBeam:
+	"""The class for saving the beam node."""
 	def __init__(self, score, node_stack, embedding_stack, left_childs, out):
 		self.score = score
 		self.embedding_stack = copy_list(embedding_stack)
@@ -36,32 +38,12 @@ class TreeBeam:  # the class save the beam node
 		self.left_childs = copy_list(left_childs)
 		self.out = copy.deepcopy(out)
 
-class TreeEmbedding:  # the class save the tree
+class TreeEmbedding:
+	"""The class for saving the tree."""
 	def __init__(self, embedding, terminal=False):
 		self.embedding = embedding
 		self.terminal = terminal
 
-
-# Sends a message of node feature h.
-msg = dgl_fn.copy_src(src='h', out='m')
-
-def reduce(nodes):
-	"""Take an average over all neighbor node features hu and use it to
-	overwrite the original node feature."""
-	accum = torch.mean(nodes.mailbox['m'], 1)
-	return {'h': accum}
-
-class NodeApplyModule(nn.Module):
-	"""Update the node feature hv with ReLU(Whv+b)."""
-	def __init__(self, in_feats, out_feats, activation):
-		super(NodeApplyModule, self).__init__()
-		self.linear = nn.Linear(in_feats, out_feats)
-		self.activation = activation
-
-	def forward(self, node):
-		h = self.linear(node.data['h'])
-		h = self.activation(h)
-		return {'h' : h}
 
 class GCNBranch(nn.Module):
 	def __init__(self, in_feats, out_feats, dropout=0.5):
@@ -72,45 +54,11 @@ class GCNBranch(nn.Module):
 		self.gc2 = GraphConv(in_feats, out_feats, allow_zero_in_degree=True)
 
 	def forward(self, g, feature):
-		# # Initialize the node features with h. 
-		# g.ndata['h'] = feature
-		# g.update_all(msg, reduce)
-		# g.apply_nodes(func=self.apply_mod)
-		# return g.ndata.pop('h')
 		out = self.gc1(g, feature)
 		out = self.relu(out)
 		out = self.dropout(out)
 		out = self.gc2(g, out)
 		return out
-
-# class GCN(nn.Module):
-# 	def __init__(self, n_infeat, n_hidden, n_classes, n_layers=2): #, activation):
-# 		super(GCN, self).__init__()
-
-# 		self.layers = nn.ModuleList()
-# 		self.layers.append(GraphConv(n_infeat, n_hidden)) #, activation=activation))
-# 		for i in range(n_layers - 1):
-# 			self.layers.append(GraphConv(n_hidden, n_hidden)) #, activation=activation))
-# 		self.layers.append(GraphConv(n_hidden, n_classes))
-
-# 	def forward(self, graph, features):
-# 		print(features.shape)
-# 		print(graph.shape)
-# 		h = features
-# 		for i, layer in enumerate(self.layers):
-# 			h = layer(graph, h)
-# 		return h
-
-# class PositionwiseFeedForward(nn.Module):
-#     """Implements FFN equation."""
-#     def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.1):
-#         super(PositionwiseFeedForward, self).__init__()
-#         self.w_1 = nn.Linear(in_dim, hidden_dim)
-#         self.w_2 = nn.Linear(hidden_dim, out_dim)
-#         self.dropout = dropout
-
-#     def forward(self, x):
-#         return self.w_2(F.dropout(F.relu(self.w_1(x)), self.dropout, training=self.training))
 
 class GraphModule(nn.Module):
 	def __init__(self, in_dim, hidden_dim, out_dim, n_head=2, dropout=0.5):
@@ -127,60 +75,103 @@ class GraphModule(nn.Module):
 		self.layer_norm = nn.LayerNorm(hidden_dim)
 
 	def forward(self, g, features):
-		# For undirected graphs, in_degree is the same as
-		# out_degree.
-		h = features.view(-1, self.in_dim) #g.in_degrees().view(-1, 1).float()
+		h = features.reshape(-1, self.hidden_dim)
 		graphs = [g, g]
 		h = torch.cat([branch(graph, h) for branch, graph in zip(self.branches, graphs)], dim=-1).view_as(features)
 		h = features + self.layer_norm(h)
 		h = h + self.feed_forward(h)
-		return h.view(g.batch_size, -1, self.hidden_dim)
-		#print(h.shape)
-		# h = self.layer0(g, h)
-		# #print(h.shape)
-		# h = self.layer1(g, h)
-		# #print(h.shape)
-		# g.ndata['h'] = h
-		# #print(features.shape)
-		# hg = h.view(g.batch_size, -1, self.hidden_dim) + features.view(g.batch_size, -1, self.hidden_dim) # dgl.mean_nodes(g, 'h')
-		# #print(hg.shape)
-		# return self.feed_forward(hg) + hg #self.classify(hg)
+		return h
 
-class EncoderWithGNN(nn.Module):
-	def __init__(self, vocab_size, embedding_size, hidden_size, n_layers):
-		super(EncoderWithGNN, self).__init__()
+class BertEncoder(nn.Module):
+	MAX_LENGTH = 512
+	def __init__(self, bert_model='bert-base-uncased', freeze_bert=False):
+		super(BertEncoder, self).__init__()
+		self.bert_layer = BertModel.from_pretrained(bert_model)
+		self.bert_tokenizer = BertTokenizer.from_pretrained(bert_model)
+
+		if freeze_bert:
+			for p in self.bert_layer.parameters():
+				p.requires_grad = False
+
+	def bertify_input(self, sentences):
+		"""Transforms the sentences into BERT recognizable tokens."""
+		all_tokens = [['[CLS]'] + self.bert_tokenizer.tokenize(sentence) + ['[SEP]'] for sentence in sentences]
+
+		index_retrieve = []
+		for sent in all_tokens:
+			cur_ls = []
+			for j in range(1, len(sent)):
+				if sent[j][0] == '#':
+					continue
+				else:
+					cur_ls.append(j)
+			index_retrieve.append(cur_ls)
+
+		# Pad all the sentences to a maximum length
+		input_lengths = [min(len(tokens), BertEncoder.MAX_LENGTH) for tokens in all_tokens]
+		max_length = max(input_lengths)
+		if max_length > BertEncoder.MAX_LENGTH:
+			max_length = BertEncoder.MAX_LENGTH
+
+		token_ids = []
+		attn_masks = []
+		for tokens in all_tokens:
+			encoded_dict = self.bert_tokenizer.encode_plus(
+				tokens,
+				add_special_tokens=True,
+				max_length=max_length,
+				truncation=True,
+				padding='max_length',
+				return_attention_mask=True,
+				return_tensors='pt',
+			)
+			token_ids.append(encoded_dict['input_ids'])
+			attn_masks.append(encoded_dict['attention_mask'])
+
+		token_ids = torch.cat(token_ids, dim=0).to(get_available_device())
+		attn_masks = torch.cat(attn_masks, dim=0).to(get_available_device())
+
+		return token_ids, attn_masks, input_lengths, index_retrieve
+
+	def forward(self, sentences):
+		# Preprocess sentences.
+		token_ids, attn_masks, input_lengths, index_retrieve = self.bertify_input(sentences)
+
+		# Feed through bert.
+		output = self.bert_layer(token_ids, attention_mask=attn_masks)
+		cont_reps = output.last_hidden_state
+
+		return cont_reps, input_lengths, token_ids, index_retrieve
+
+
+
+class EncoderWithGCN(nn.Module):
+	def __init__(self, vocab_size, embedding_size, hidden_size):
+		super(EncoderWithGCN, self).__init__()
 
 		self.hidden_size = hidden_size
-		self.embedding = Seq2TreeEncoder(
-			vocab_size=vocab_size,
-			embedding_size=embedding_size,
-			hidden_size=hidden_size,
-			n_layers=n_layers,
-		)
-		#self.layer0 = GCN(hidden_size, hidden_size, F.relu)
-		#self.layer1 = GCN(hidden_size, hidden_size, F.relu)
+
 		self.gcn = GraphModule(hidden_size, hidden_size, hidden_size)
 
-	def forward(self, input_tokens, input_lengths, batch_graph):
-		pade_outputs, problem_output = self.embedding(input_tokens, input_lengths)
-		#print(pade_outputs.shape)
-		#print(batch_graph.batch_num_nodes())
-		#print(batch_graph.in_degrees().view(-1, 1).shape)
+	def forward(self, embedded, input_lengths, orig_idx, batch_graph):
+		pade_outputs = embedded # B x S x H
+		problem_output = pade_outputs[:, 0]
+
 		pade_outputs = self.gcn(batch_graph, pade_outputs)
-		#print(pade_outputs.shape)
 		pade_outputs = pade_outputs.transpose(0, 1)
 		return pade_outputs, problem_output
 
 class Graph2TreeModel(nn.Module):
-	def __init__(self, encoder_input_size, embedding_size, hidden_size, n_layers, op_nums,
-		predictor_input_size, var_nums):
+	def __init__(self, embedding_size, hidden_size, op_nums,
+		predictor_input_size, var_nums, freeze_emb):
 		super(Graph2TreeModel, self).__init__()
 
-		self.encoder = EncoderWithGNN(
-			encoder_input_size,
+		self.embedding = BertEncoder(freeze_bert=freeze_emb)
+
+		self.encoder = EncoderWithGCN(
+			embedding_size,
 			embedding_size,
 			hidden_size,
-			n_layers,
 		)
 		self.predictor = Seq2TreePrediction(
 			vocab_size=predictor_input_size,
@@ -203,21 +194,15 @@ class Graph2TreeModel(nn.Module):
 		)
 
 
-	def forward(self, batch, generate_num_ids, output_lang, var_nums=[], batch_first=False):
-
+	def forward(self, batch, generate_num_ids, input_lang, output_lang, var_nums=[], batch_first=False):
 		input_batch, input_lengths = batch.input_batch, batch.input_lengths
 		output_batch, output_lengths = batch.output_batch, batch.output_lengths
 		nums_batch, num_size_batch = batch.num_batch, batch.num_size_batch
 		nums_stack_batch, num_pos_batch = batch.num_stack_batch, batch.num_pos_batch
+		nums_value_batch = batch.num_value_batch
 		ans_batch = batch.answers_batch
 		graph_batch = batch.graph_batch
-
-		# sequence mask for attention
-		seq_mask = []
-		max_len = max(input_lengths)
-		for i in input_lengths:
-			seq_mask.append([0 for _ in range(i)] + [1 for _ in range(i, max_len)])
-		seq_mask = torch.ByteTensor(seq_mask)
+		group_batch = batch.group_batch
 
 		num_mask = []
 		max_num_size = max(num_size_batch) + len(generate_num_ids) + len(var_nums)
@@ -238,11 +223,30 @@ class Graph2TreeModel(nn.Module):
 
 		batch_size = len(input_lengths)
 
+		self.embedding.train()
 		self.encoder.train()
 		self.predictor.train()
 		self.generator.train()
 		self.merger.train()
 		self.semantic_alignment.train()
+
+
+		embedded, input_lengths, orig_idx, graph_batch = self.get_transformer_embeddings(
+			input_batch,
+			input_lengths,
+			group_batch,
+			nums_value_batch,
+			num_pos_batch,
+			input_lang,
+			batch_size
+		)
+
+		# sequence mask for attention
+		seq_mask = []
+		max_len = max(input_lengths)
+		for i in input_lengths:
+			seq_mask.append([0 for _ in range(i)] + [1 for _ in range(i, max_len)])
+		seq_mask = torch.ByteTensor(seq_mask)
 
 		if is_gpu_available():
 			input_var = input_var.cuda()
@@ -250,7 +254,8 @@ class Graph2TreeModel(nn.Module):
 			padding_hidden = padding_hidden.cuda()
 			num_mask = num_mask.cuda()
 
-		encoder_outputs, problem_output = self.encoder(input_var, input_lengths, graph_batch)
+
+		encoder_outputs, problem_output = self.encoder(embedded, input_lengths, orig_idx, graph_batch)
 
 		# Prepare input and output variables.
 		node_stacks = [[TreeNode(_)] for _ in problem_output.split(1, dim=0)]
@@ -280,12 +285,9 @@ class Graph2TreeModel(nn.Module):
 			target[t] = target_t
 			if is_gpu_available():
 				generate_input = generate_input.cuda()
-			#print('nums_stack_batch ', nums_stack_batch)
-			#print('current_embeddings ', current_embeddings)
-			#print('generate_input ', generate_input)
-			#print('target_t ', target_t)
+
 			left_child, right_child, node_label = self.generator(current_embeddings, generate_input, current_context)
-			left_childs = [] # !!!! already have such variable !!!!
+			left_childs = []
 
 			for idx, l, r, node_stack, i, o in zip(range(batch_size), left_child.split(1), right_child.split(1),
 												   node_stacks, target[t].tolist(), embeddings_stacks):
@@ -336,20 +338,16 @@ class Graph2TreeModel(nn.Module):
 		if sa_len > 0:
 			for sa_pair in all_sa_outputs:
 				total_semanti_alignment_loss += semantic_alignment_loss(sa_pair[0], sa_pair[1])
-			# print(total_semanti_alognment_loss)
 			total_semanti_alignment_loss = total_semanti_alignment_loss / sa_len
-		# print(total_semanti_alognment_loss)
 
-		# op_target = target < num_start
-		# loss_0 = masked_cross_entropy_without_logit(all_leafs, op_target.long(), target_length)
 		return masked_cross_entropy(all_node_outputs, target, output_lengths) + 0.01 * total_semanti_alignment_loss
 
 	def generate_tree_input(self, target, decoder_output, nums_stack_batch, num_start, unk):
-		# when the decoder input is copied num but the num has two pos, chose the max
+		# When the decoder input is copied num but the num has two pos, choose the max.
 		target_input = copy.deepcopy(target)
 
 		if is_gpu_available():
-			decoder_output = decoder_output.cuda() # .cpu() ???????
+			decoder_output = decoder_output.cuda()
 
 		for i in range(len(target)):
 			if target[i] == unk:
@@ -391,26 +389,46 @@ class Graph2TreeModel(nn.Module):
 			all_outputs = encoder_outputs.contiguous() # B x S x H
 		else:
 			all_outputs = encoder_outputs.transpose(0, 1).contiguous()  # S x B x H
-		#print(all_outputs.shape)
+
 		all_embedding = all_outputs.view(-1, encoder_outputs.size(2))  # S x B x H -> (B x S) x H
 		all_num = all_embedding.index_select(0, indices)
 		all_num = all_num.view(batch_size, num_size, hidden_size)
 		return all_num.masked_fill_(masked_index.bool(), 0.0)
 
-	def evaluate_tree(self, item, generate_nums, output_lang,
+	def get_transformer_embeddings(self, input_batch, input_lengths, group_batch, num_value_batch, num_pos_batch, input_lang, batch_size):
+		embedded = None
+		orig_idx = None
+
+		contextual_input = index_batch_to_words(input_batch, input_lengths, input_lang)
+		emb_input_seq, emb_input_lengths, token_ids, index_retrieve = self.embedding(contextual_input)
+
+		new_group_batch = []
+		for bat in range(batch_size):
+			try:
+				new_group_batch.append([index_retrieve[bat][ind] for ind in group_batch[bat] if ind < len(index_retrieve[bat])])
+			except:
+				pdb.set_trace()
+
+		graph_batch = GraphBuilder.get_single_batch_graph(token_ids.cpu().tolist(), emb_input_lengths, new_group_batch, num_value_batch, num_pos_batch)
+
+		return emb_input_seq, emb_input_lengths, [_ for _ in range(len(emb_input_lengths))], graph_batch
+
+	def evaluate_tree(self, item, generate_nums, input_lang, output_lang,
 					  beam_size=5, var_nums=[], beam_search=True, max_length=MAX_OUTPUT_LENGTH):
-		input_batch, input_length = item.input_tokens, len(item.input_tokens)
+		input_batch, input_lengths = item.input_tokens, len(item.input_tokens)
 		num_pos = item.num_pos
 		graph_batch = item.graph
+		group_batch = item.group_nums
+		num_value_batch = item.nums
+		num_pos_batch = item.num_pos
 
-		# sequence mask for attention
-		seq_mask = torch.ByteTensor(1, input_length).fill_(0)
 		# Turn padded arrays into (batch_size x max_len) tensors, transpose into (max_len x batch_size)
 		input_var = torch.LongTensor(input_batch).unsqueeze(1)
 
-		num_mask = torch.ByteTensor(1, len(num_pos) + len(generate_nums)+ len(var_nums)).fill_(0)
+		num_mask = torch.BoolTensor(1, len(num_pos) + len(generate_nums)+ len(var_nums)).fill_(0)
 
 		# Set to not-training mode to disable dropout
+		self.embedding.eval()
 		self.encoder.eval()
 		self.predictor.eval()
 		self.generator.eval()
@@ -422,18 +440,46 @@ class Graph2TreeModel(nn.Module):
 
 		if is_gpu_available():
 			input_var = input_var.cuda()
-			seq_mask = seq_mask.cuda()
 			padding_hidden = padding_hidden.cuda()
 			num_mask = num_mask.cuda()
 
+		embedded = None
+		orig_idx = None
+		# [START] using Bert...
+		contextual_input = index_batch_to_words([input_batch], [input_lengths], input_lang)
+		emb_input_seq, emb_input_lengths, token_ids, index_retrieve = self.embedding(contextual_input)
+
+		try:
+			new_group_example = [index_retrieve[0][ind] for ind in group_batch if ind < len(index_retrieve[0])]
+		except:
+			pdb.set_trace()
+
+		graph_batch = GraphBuilder.get_single_example_graph(
+			token_ids.cpu().tolist()[0], 
+			emb_input_lengths[0], 
+			new_group_example, 
+			num_value_batch, 
+			num_pos_batch
+		)
+
+		embedded, input_lengths, orig_idx = emb_input_seq, emb_input_lengths, [_ for _ in range(len(emb_input_lengths))]
+
+		input_lengths = input_lengths[0]
+		# [END] using Bert
+
+
 		# Run words through encoder
-		encoder_outputs, problem_output = self.encoder(input_var, [input_length], graph_batch)
+		encoder_outputs, problem_output = self.encoder(embedded, [input_lengths], orig_idx, graph_batch)
+
+		# sequence mask for attention
+		seq_mask = torch.ByteTensor(1, input_lengths).fill_(0)
+		if is_gpu_available():
+			seq_mask = seq_mask.cuda()
 
 		# Prepare input and output variables  # # root embedding B x 1
 		node_stacks = [[TreeNode(_)] for _ in problem_output.split(1, dim=0)]
 
 		num_size = len(num_pos)
-		# 提取与问题相关的数字embedding
 		all_nums_encoder_outputs = self.get_all_number_encoder_outputs(encoder_outputs, [num_pos], batch_size, num_size,
 																  self.encoder.hidden_size)
 		num_start = output_lang.num_start - len(var_nums)
@@ -451,7 +497,7 @@ class Graph2TreeModel(nn.Module):
 					if len(b.node_stack[0]) == 0:
 						current_beams.append(b)
 						continue
-					# left_childs = torch.stack(b.left_childs)
+
 					left_childs = b.left_childs
 
 					num_score, op, current_embeddings, current_context, current_nums_embeddings = self.predictor(
@@ -460,8 +506,6 @@ class Graph2TreeModel(nn.Module):
 
 
 					out_score = nn.functional.log_softmax(torch.cat((op, num_score), dim=1), dim=1)
-
-					# out_score = p_leaf * out_score
 
 					topv, topi = out_score.topk(beam_size)
 
@@ -476,8 +520,7 @@ class Graph2TreeModel(nn.Module):
 
 						node = current_node_stack[0].pop()
 
-						# var_num当时数字处理，SEP/;当操作符处理
-						if out_token < num_start: # 非数字
+						if out_token < num_start:
 							generate_input = torch.LongTensor([out_token])
 							if is_gpu_available():
 								generate_input = generate_input.cuda()
@@ -487,7 +530,7 @@ class Graph2TreeModel(nn.Module):
 							current_node_stack[0].append(TreeNode(left_child, left_flag=True))
 
 							current_embeddings_stacks[0].append(TreeEmbedding(node_label[0].unsqueeze(0), False))
-						else:  # 数字
+						else:
 							current_num = current_nums_embeddings[0, out_token - num_start].unsqueeze(0)
 
 							while len(current_embeddings_stacks[0]) > 0 and current_embeddings_stacks[0][-1].terminal:
@@ -523,14 +566,13 @@ class Graph2TreeModel(nn.Module):
 				all_node_outputs.append(out_tokens)
 				left_childs = []
 				for idx, node_stack, out_token, embeddings_stack in zip(range(batch_size), node_stacks, out_tokens, embeddings_stacks):
-					# node = node_stack.pop()
 					if len(node_stack) != 0:
 						node = node_stack.pop()
 					else:
 						left_childs.append(None)
 						continue
-					# var_num当时数字处理，SEP/;当操作符处理
-					if out_token < num_start: # 非数字
+
+					if out_token < num_start:
 						generate_input = torch.LongTensor([out_token])
 						if is_gpu_available():
 							generate_input = generate_input.cuda()
@@ -538,7 +580,7 @@ class Graph2TreeModel(nn.Module):
 						node_stack.append(TreeNode(right_child))
 						node_stack.append(TreeNode(left_child, left_flag=True))
 						embeddings_stack.append(TreeEmbedding(node_label.unsqueeze(0), False))
-					else: # 数字
+					else:
 						current_num = current_nums_embeddings[idx, out_token - num_start].unsqueeze(0)
 						while len(embeddings_stack) > 0 and embeddings_stack[-1].terminal:
 							sub_stree = embeddings_stack.pop()
@@ -551,7 +593,6 @@ class Graph2TreeModel(nn.Module):
 					else:
 						left_childs.append(None)
 
-			# all_leafs = torch.stack(all_leafs, dim=1)  # B x S x 2
 			all_node_outputs = torch.stack(all_node_outputs, dim=1)  # B x S x N
 			all_node_outputs = all_node_outputs.cpu().numpy()
 			return all_node_outputs[0]

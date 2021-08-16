@@ -91,3 +91,14 @@ def only_until_first_boxed_from_tokens(string, tokens):
             break
 
     return tokens[:i]
+
+def copy_list(l):
+    r = []
+    if len(l) == 0:
+        return r
+    for i in l:
+        if type(i) is list:
+            r.append(copy_list(i))
+        else:
+            r.append(i)
+    return r

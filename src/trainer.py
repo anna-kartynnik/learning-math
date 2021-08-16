@@ -12,6 +12,7 @@ from preprocess_dataset.data_processor import DataProcessor, prepare_folds, read
 from utils.gpu_utils import get_available_device, is_gpu_available
 from models import Graph2TreeModel
 from utils.calculate import compute_equations_result
+from preprocess_dataset.batch import MATHBatch
 
 
 class Trainer(object):
@@ -38,27 +39,26 @@ class Trainer(object):
 
 	def build_model(self):
 		op_nums = self.data_processor.output_lang.n_words - self.data_processor.copy_nums - 1 - len(self.data_processor.generate_nums)
-		print('output_lang ', self.data_processor.output_lang.index2word)
-		print('op_nums', op_nums)
 
 		self.model = Graph2TreeModel(
-			self.data_processor.input_lang.n_words,
 			self.args.embedding_size,
 			self.args.hidden_size,
-			self.args.encoder_layers,
 			op_nums,
 			len(self.data_processor.generate_nums) + len(self.data_processor.var_nums),
-			self.data_processor.var_nums
+			self.data_processor.var_nums,
+			self.args.freeze_emb,
 		)
 		self.model.to(self.device)
 
 	def build_optimizer(self):
+		self.embedding_optimizer = optim.Adam(self.model.embedding.parameters(), lr=self.args.emb_learning_rate, weight_decay=self.args.weight_decay)
 		self.encoder_optimizer = optim.Adam(self.model.encoder.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.predictor_optimizer = optim.Adam(self.model.predictor.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.generator_optimizer = optim.Adam(self.model.generator.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.merger_optimizer = optim.Adam(self.model.merger.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 		self.sem_align_optimizer = optim.Adam(self.model.semantic_alignment.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 
+		self.embedding_scheduler = optim.lr_scheduler.StepLR(self.embedding_optimizer, step_size=20, gamma=0.5)
 		self.encoder_scheduler = optim.lr_scheduler.StepLR(self.encoder_optimizer, step_size=20, gamma=0.5)
 		self.predictor_scheduler = optim.lr_scheduler.StepLR(self.predictor_optimizer, step_size=20, gamma=0.5)
 		self.generator_scheduler = optim.lr_scheduler.StepLR(self.generator_optimizer, step_size=20, gamma=0.5)
@@ -72,6 +72,7 @@ class Trainer(object):
 		torch.manual_seed(seed)
 
 	def scheduler_step(self):
+		self.embedding_scheduler.step()
 		self.encoder_scheduler.step()
 		self.predictor_scheduler.step()
 		self.generator_scheduler.step()
@@ -79,6 +80,7 @@ class Trainer(object):
 		self.sem_align_optimizer.step()
 
 	def optimizer_zero_grad(self):
+		self.embedding_optimizer.zero_grad()
 		self.encoder_optimizer.zero_grad()
 		self.predictor_optimizer.zero_grad()
 		self.generator_optimizer.zero_grad()
@@ -86,6 +88,7 @@ class Trainer(object):
 		self.sem_align_optimizer.zero_grad()
 
 	def optimizer_step(self):
+		self.embedding_optimizer.step()
 		self.encoder_optimizer.step()
 		self.predictor_optimizer.step()
 		self.generator_optimizer.step()
@@ -93,10 +96,10 @@ class Trainer(object):
 		self.sem_align_optimizer.step()
 
 	def train(self):
-		best_acc = (-1, -1)
+		best_val_acc = -1
 
 		print('---------------- Checking validation:')
-		self.eval(mode='val')
+		self.eval(mode='val-check')
 
 		print('------------------\nStarting training.')
 		for epoch in range(1, self.args.max_epochs + 1):
@@ -105,12 +108,11 @@ class Trainer(object):
 			print('epochs = {}, train_loss = {:.3f}, errors = {}'.format(epoch, loss_to_print, errors))
 
 			if epoch > 0 and epoch % 5 == 0:
-				test_acc = -1 # TODO?
 				val_acc = self.eval(mode='val')
-				if val_acc > best_acc[1]:
-					best_acc = (test_acc, val_acc)
-		print('Best validation accuracy: {:.3f}\n'.format(best_acc[1]))
-		return best_acc
+				if val_acc > best_val_acc:
+					best_val_acc = val_acc
+		print('Best validation accuracy: {:.3f}\n'.format(best_val_acc))
+		return best_val_acc
 
 	def train_epoch(self, epoch, errors):
 		loss_to_print = 0
@@ -121,8 +123,8 @@ class Trainer(object):
 			self.optimizer_zero_grad()
 
 			try:
-				loss = self.model(batch, self.data_processor.generate_num_ids, self.data_processor.output_lang,
-							var_nums=self.data_processor.var_nums)
+				loss = self.model(batch, self.data_processor.generate_num_ids, self.data_processor.input_lang,
+							self.data_processor.output_lang, var_nums=self.data_processor.var_nums)
 				loss.backward()
 				self.optimizer_step()
 				loss_to_print += loss
@@ -142,7 +144,7 @@ class Trainer(object):
 			# Conversion to `float` failed.
 			return np.nan
 
-	def eval(self, mode='val'):
+	def eval(self, mode='val', size=None):
 		self.model.eval()
 		start = time.time()
 		value_ac = 0
@@ -152,14 +154,20 @@ class Trainer(object):
 		correct = 0
 		skipped = 0
 
-		test_batch = self.data_processor.test_pairs
+		if mode == 'val-check':
+			test_batch = self.data_processor.test_pairs[:10]
+		else:
+			test_batch = self.data_processor.test_pairs
 
 		for step, test_item in tqdm(enumerate(test_batch), desc='Validation', total=len(test_batch)):
+			if test_item.filename == 'augmented':
+				continue
 			target_ans = test_item.answers
 			try:
 				test_ans = 'undefined'
-				test_res = self.model.evaluate_tree(test_item, self.data_processor.generate_num_ids, self.data_processor.output_lang,
-						beam_size=self.args.beam_size, beam_search=self.args.beam_search, var_nums=self.data_processor.var_nums)
+				test_res = self.model.evaluate_tree(test_item, self.data_processor.generate_num_ids, self.data_processor.input_lang,
+						self.data_processor.output_lang, beam_size=self.args.beam_size, beam_search=self.args.beam_search,
+						var_nums=self.data_processor.var_nums)
 
 				val_ac, equ_ac, ans_ac, _, _, test_ans = compute_equations_result(test_res, test_item.output_tokens, self.data_processor.output_lang,
 						test_item.nums, test_item.num_stack, ans_list=target_ans, tree=True, prefix=True)
@@ -183,8 +191,6 @@ class Trainer(object):
 
 			except Exception as e:
 				traceback.print_exc()
-				print('test_ans ', test_ans)
-				print('real_ans ', target_ans)
 				eval_total += 1
 				skipped += 1
 
@@ -201,19 +207,23 @@ class Trainer(object):
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--MATH-dataroot', default='../dataset/kaggle-dataset/train/*/*', type=str)
+	parser.add_argument('--aug-dataset-path', default='../dataset/mawps_combine.json', type=str)
 
 	parser.add_argument('--learning-rate', type=float, default=1e-3)
 	parser.add_argument('--seed', type=int, default=13, help='torch manual random number generator seed')
 	parser.add_argument('--init-weight', type=float, default=0.08, help='initailization weight')
-	parser.add_argument('--weight-decay', type=float, default=1e-5)
-	parser.add_argument('--max-epochs', type=int, default=10, help='number of full passes through the training data')
-	parser.add_argument('--min-freq', type=int, default=2, help='minimum frequency for vocabulary')
+
+	parser.add_argument('--weight-decay', type=float, default=1e-5, help='Weight decay')
+	parser.add_argument('--max-epochs', type=int, default=100, help='number of full passes through the training data')
+	parser.add_argument('--min-freq', type=int, default=1, help='minimum frequency for vocabulary')
 	parser.add_argument('--grad-clip', type=int, default=5, help='clip gradients at this value')
 
 	parser.add_argument('--batch-size', type=int, default=8, help='the size of one mini-batch')
-	parser.add_argument('--embedding-size', type=int, default=128, help='TODO')
-	parser.add_argument('--hidden-size', type=int, default=512, help='TODO')
-	parser.add_argument('--encoder-layers', type=int, default=2, help='TODO')
+	parser.add_argument('--hidden-size', type=int, default=768, help='hidden size')
+
+	parser.add_argument('--emb-learning-rate', type=float, default=1e-5, help='Learning rate to train embeddings')
+	parser.add_argument('--freeze-emb', type=bool, default=False, help='Freeze embedding weights')
+	parser.add_argument('--embedding-size', type=int, default=768, help='embedding size')
 
 	parser.add_argument('--beam-size', type=int, default=5, help='the beam size of beam search')
 	parser.add_argument("--beam-search", type=bool, default=True, help="whether to use beam search")
@@ -225,7 +235,7 @@ def main():
 
 	print('=================================')
 	print('Reading data...')
-	raw_samples = read_files(cfg.MATH_dataroot)
+	raw_samples = read_files(cfg.MATH_dataroot, aug_dataset_path=None) #cfg.aug_dataset_path)
 
 	runner = Trainer(cfg, raw_samples)
 

@@ -1,148 +1,326 @@
+"""Helper class for working with data.
+
+Some functions are borrowed with modifications from: https://github.com/QinJinghui/SAU-Solver
+"""
+
 import random
 import json
 import copy
 import re
-from .text_num_utils import isfloat, en_number_pattern, en_text2num, en_fraction_pattern
+
+import torch
+
+from sympy.parsing.latex import parse_latex
+
 
 PAD_token = 0
 
-# chs_arabic_map = {u'零':0, u'一':1, u'二':2, u'三':3, u'四':4,
-#                   u'五':5, u'六':6, u'七':7, u'八':8, u'九':9,
-#                   u'十':10, u'百':100, u'千':10 ** 3, u'万':10 ** 4,
-#                   u'〇':0, u'壹':1, u'贰':2, u'叁':3, u'肆':4,
-#                   u'伍':5, u'陆':6, u'柒':7, u'捌':8, u'玖':9,
-#                   u'拾':10, u'佰':100, u'仟':10 ** 3, u'萬':10 ** 4,
-#                   u'亿':10 ** 8, u'億':10 ** 8, u'幺': 1,
-#                   u'０':0, u'１':1, u'２':2, u'３':3, u'４':4,
-#                   u'５':5, u'６':6, u'７':7, u'８':8, u'９':9}
+def text2int(text, numwords={}):
+    if not numwords:
+        units = [
+          "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+          "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+          "sixteen", "seventeen", "eighteen", "nineteen",
+        ]
 
+        tens = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
 
-# def convert_chinese_digits_to_arabic (chinese_digits, encoding="utf-8"):
-#     if not isinstance(chinese_digits, str):
-#         chinese_digits = chinese_digits.decode(encoding)
+        scales = ["hundred", "thousand", "million", "billion", "trillion"]
 
-#     result = 0
-#     tmp = 0
-#     hnd_mln = 0
-#     for count in range(len(chinese_digits)):
-#         curr_char  = chinese_digits[count]
-#         curr_digit = chs_arabic_map.get(curr_char, None)
-#         # meet 「亿」 or 「億」
-#         if curr_digit == 10 ** 8:
-#             result  = result + tmp
-#             result  = result * curr_digit
-#             # get result before 「亿」 and store it into hnd_mln
-#             # reset `result`
-#             hnd_mln = hnd_mln * 10 ** 8 + result
-#             result  = 0
-#             tmp     = 0
-#         # meet 「万」 or 「萬」
-#         elif curr_digit == 10 ** 4:
-#             result = result + tmp
-#             result = result * curr_digit
-#             tmp    = 0
-#         # meet 「十」, 「百」, 「千」 or their traditional version
-#         elif curr_digit >= 10:
-#             tmp    = 1 if tmp == 0 else tmp
-#             result = result + curr_digit * tmp
-#             tmp    = 0
-#         # meet single digit
-#         elif curr_digit is not None:
-#             tmp = tmp * 10 + curr_digit
-#         else:
-#             return result
-#     result = result + tmp
-#     result = result + hnd_mln
-#     return result
+        for idx, word in enumerate(units):    numwords[word] = (1, idx)
+        for idx, word in enumerate(tens):     numwords[word] = (1, idx * 10)
+        for idx, word in enumerate(scales):   numwords[word] = (10 ** (idx * 3 or 2), 0)
 
+    current = result = 0
+    new_words = []
+    start = 0
+    words = re.split(r'(\W+)', text)
 
-def replace_en_number_with_digits(text, str_bool=False):
-    text = text.replace('$', '$ ') \
-        .replace('/', ' / ') \
-        .replace('a half', '1.5')
-    text = text.replace('twice', '2 times')
-    text = text.replace('double', '2 times')
+    for index, word in enumerate(words):
+        if word not in numwords:
+            if result + current > 0:
+                new_words.append(str(result + current))
+                current = result = 0
+            elif result + current == 0 and index > 0 and words[index - 1] == 'zero':
+                new_words.append(str(0))
 
-    # detect case: num1    num2   /   num3  --> num1 + (num2/num3)
-    for match in re.finditer('([0-9]+) ([0-9]+) */ *([0-9]+)', text):
-        frac = int(match.group(1)) + int(match.group(2)) / int(match.group(3))
-        text = text.replace(match.group(), str(frac))
+            new_words.append(word)
+            continue
 
-    # detect case: num1   /   num2  --> num1/num2
-    for match in re.finditer(r'\(([0-9]+) */ *([0-9]+)\)', text):
-        frac = int(match.group(1)) / int(match.group(2))
-        text = text.replace(match.group(), str(frac))
+        scale, increment = numwords[word]
+        current = current * scale + increment
+        if scale > 100:
+            result += current
+            current = 0
 
-    # detect case: x.x%
-    for match in re.finditer(r'([0-9]+\.)?[0-9]+%', text):
-        percent_text = match.group()
-        float_text = str(float(percent_text[:-1]) / 100)
-        text = text.replace(percent_text,
-                            float_text)
+    if result + current > 0:
+        new_words.append(str(result + current))
 
-    # detect case: 100,000
-    for match in re.finditer('\\d{1,3}(,\\d{3})+', text):
-        match_text = match.group()
-        text = text.replace(match_text,
-                            match_text.replace(',', ''))
+    return ''.join(new_words)
 
-    # detect fraction case： one third
-    for num_text in en_fraction_pattern.finditer(text):
-        print(num_text.group())
-        print(str(en_text2num(num_text.group(),str_bool=str_bool)))
-        text = text.replace(num_text.group(),
-                            str(en_text2num(num_text.group(),str_bool=str_bool)))
+def remove_latex_text(text):
+    """Removes unnecessary symbols."""
+    pattern = re.compile('\\\\text(rm|bf|it|normal)?\{.*?\}')
+    match = pattern.search(text)
+    start = 0
+    new_text = ''
+    while match is not None:
+        curly_index = match.group(0).index('{')
+        new_text += text[start:match.start()] + text[match.start() + curly_index + 1: match.end() - 1].strip()
+        start = match.end()
+        match = pattern.search(text, match.end())
+    new_text += text[start:]
 
-    # replace number with digits
-    for num_text in en_number_pattern.finditer(text):
-        text = text.replace(num_text.group(),
-                            str(en_text2num(num_text.group(),str_bool=str_bool)))
+    return new_text
 
-    text = re.sub(r'(-?\d+.\d+|\d+)', r' \1 ', text)
-    text = re.sub(r' +', ' ', text)
+def clean_text(text, replace_text_nums=False, remove_text=True):
+    """Removes unnecessary symbols."""
+    text = text.replace('\n', ' ')
+    text = text.replace('\\qquad', ' ')
+    text = text.replace('\\dfrac', '\\frac')
+    text = text.replace('\\tfrac', '\\frac')
+    text = text.replace('\\left(', '(')
+    text = text.replace('\\right)', ')')
+    text = text.replace('\\left[', '[')
+    text = text.replace('\\right]', ']')
+    text = text.replace('\\left{', '{')
+    text = text.replace('\\right}', '}')
+    text = text.replace('\\left\\(', '(')
+    text = text.replace('\\right\\)', ')')
+    text = text.replace('\\left\\[', '[')
+    text = text.replace('\\right\\]', ']')
+    text = text.replace('\\left\\{', '{')
+    text = text.replace('\\right\\}', '}')
+    text = text.replace('\\dots', '...')
+    text = text.replace('\\cdots', '...')
+    text = text.replace('\\ldots', '...')
+    text = text.replace('\\cdot', '*')
+    text = text.replace('\\times', '*') 
+    text = text.replace('\\!', '')
+    text = text.replace('\\$', ' dollar ')
+    text = text.replace('\\Rightarrow', ';')
+    text = text.replace('**', '^')
+
+    if replace_text_nums:
+        new_text = ''
+        formula_pattern = re.compile('\\\\\[.+\\\\\]')
+        match = formula_pattern.search(text)
+        start = 0
+        while match is not None:
+            new_text += text2int(text[start:match.start()].lower())
+            new_text += ' ' + match.group(0) + ' '
+            start = match.end()
+            match = formula_pattern.search(text, match.end())
+        new_text += text2int(text[start:].lower())
+        text = new_text
+    if remove_text:
+        # Remove \\text{...}
+        text = remove_latex_text(text)
+
     return text
 
+def get_raw_equations(text, not_dollars=False):
+    """Collects equations from the given text."""
+    raw_equations = text.split('$')[1::2]
+    if len(raw_equations) == 0 or not_dollars:
+        pattern = re.compile('\\\\\[(.+?)\\\\\]')
+        raw_equations = pattern.findall(text)
 
-# def replace_cn_number_with_digits(chinese_digits, encoding="utf-8"):
-#     if isinstance (chinese_digits, str):
-#         chinese_digits = chinese_digits.decode(encoding)
-#
-#     result = 0
-#     tmp = 0
-#     hnd_mln = 0
-#     for count in range(len(chinese_digits)):
-#         curr_char  = chinese_digits[count]
-#         curr_digit = chs_arabic_map.get(curr_char, None)
-#         # meet 「亿」 or 「億」
-#         if curr_digit == 10 ** 8:
-#             result = result + tmp
-#             result = result * curr_digit
-#             # get result before 「亿」 and store it into hnd_mln
-#             # reset `result`
-#             hnd_mln = hnd_mln * 10 ** 8 + result
-#             result = 0
-#             tmp = 0
-#         # meet 「万」 or 「萬」
-#         elif curr_digit == 10 ** 4:
-#             result = result + tmp
-#             result = result * curr_digit
-#             tmp = 0
-#         # meet 「十」, 「百」, 「千」 or their traditional version
-#         elif curr_digit >= 10:
-#             tmp = 1 if tmp == 0 else tmp
-#             result = result + curr_digit * tmp
-#             tmp = 0
-#         # meet single digit
-#         elif curr_digit is not None:
-#             tmp = tmp * 10 + curr_digit
-#         else:
-#             return result
-#     result = result + tmp
-#     result = result + hnd_mln
-#     return result
+    return raw_equations
 
-# remove the superfluous brackets
+def remove_boxed(text):
+    """Removes \\boxed from the given text."""
+    boxed_pattern = re.compile('\\\\boxed{-?\d+}')
+    number_pattern = re.compile('-?\d+')
+
+    boxed_match = boxed_pattern.search(text)
+    if boxed_match is not None:
+        number_match = number_pattern.search(boxed_match.group(0))
+        if number_match is not None:
+            eq = number_match.group(0)
+            text = text[:boxed_match.start()] + eq + text[boxed_match.end():]
+
+    return text
+
+def replace_fracs(text):
+    """Replaces latex fractions with fractions with division sign in the given text."""
+    text = self.replace_frac(text)
+    num_let_pattern_str = '(\d{1}|[a-zA-Z]{1})'
+    text = self.replace_frac(
+        text,
+        frac_pattern=re.compile('\\\\frac' + num_let_pattern_str + num_let_pattern_str),
+        number_in_frac_pattern=re.compile(num_let_pattern_str)
+    )
+    return text
+
+number_in_frac_pattern_str = '{(\d+|[a-zA-Z]+)}' # in case when variables in fraction
+frac_pattern_str = '\\\\frac' + number_in_frac_pattern_str + number_in_frac_pattern_str
+frac_pattern = re.compile(frac_pattern_str)
+number_in_frac_pattern = re.compile(number_in_frac_pattern_str)    
+
+def replace_frac(text, frac_pattern=frac_pattern, number_in_frac_pattern=number_in_frac_pattern):
+    """Replaces fractions using the given fraction pattern."""
+    changed_text = ''
+
+    frac_match = frac_pattern.search(text)
+    start = 0
+    while frac_match is not None:
+        number_in_frac_match = number_in_frac_pattern.findall(frac_match.group(0).replace('\\frac', ''))
+        if len(number_in_frac_match) == 2:
+            changed_text += text[start:frac_match.start()] + '(' + number_in_frac_match[0] + \
+                '/' + number_in_frac_match[1] + ')'
+            start = frac_match.end()
+        else:
+            print('Invalid fraction!', text)
+            break
+        frac_match = frac_pattern.search(text, frac_match.end()) 
+    changed_text += text[start:] 
+
+    return changed_text
+
+def rewrite_proportions(equation):
+    """Works with equations of form a / b = c / d"""
+    # Assuming only one variable in equation.
+    frac_match = frac_pattern.findall(equation)
+
+    if len(frac_match) == 2:
+        params = [None] * 4
+        params[0], params[1] = frac_match[0]
+        params[2], params[3] = frac_match[1]
+        not_digits_index = -1
+        for index, param in enumerate(params):
+            if not param.isdigit():
+                not_digits_index = index
+                break
+        if not_digits_index == -1:
+            # No variables, nothing to do.
+            return equation
+        else:
+            if not_digits_index == 0:
+                frac_ind = (2, 3)
+                mult_ind = 1
+            elif not_digits_index == 2:
+                frac_ind = (0, 1)
+                mult_ind = 3
+            elif not_digits_index == 1:
+                frac_ind = (3, 2)
+                mult_ind = 0
+            else:
+                frac_ind = (1, 0)
+                mult_ind = 2
+            frac = '\\frac{' + params[frac_ind[0]] + '}{' + params[frac_ind[1]] + '}'
+            equation = params[not_digits_index] + '=(' + frac + ')*(' + params[mult_ind] + ')'
+
+    return equation
+
+def add_mult_operation(equation):
+    """Adds explicit multiplication operation."""
+    patterns = [re.compile('\)\('), re.compile('[a-zA-Z]{2}')]
+    for pattern in patterns:
+        match = pattern.search(equation)
+        changed_equation = ''
+        start = 0
+        while match is not None:
+            changed_equation += equation[start:match.start() + 1] + '*' + equation[match.start() + 1: match.end()]
+            start = match.end()
+            match = pattern.search(equation, match.end())
+        changed_equation += equation[start:]
+        equation = changed_equation
+
+    return changed_equation
+
+def extract_equations(equations, solution, preprocess):
+    """
+    Checks the given equations if they have equality sign.
+    Performs some cleaning in the equations.
+    Returns only those equations which are considered valid.
+    """
+    single_equations = []
+    for equation in equations[::-1]:
+        if '=' not in equation:
+            continue
+
+        splitted = equation.split('=')
+        if len(splitted) > 2:
+            for i in range(len(splitted) - 1, 0, -1):
+                single_equations.append(splitted[i - 1] + '=' + splitted[i])
+        else:
+            single_equations.append(equation)
+
+    clean_equations = []
+
+    for equation in single_equations:
+        equation = remove_boxed(equation)
+
+        if preprocess:
+            parsed = parse_equation(equation)
+        else:
+            parsed = None
+        if parsed is not None:
+            clean_equations.append(parsed)
+        else:
+            clean_equations.append(equation)
+
+    return clean_equations
+
+def find_equation(element, equations):
+    """Tries to find the equation for the given element."""
+    for index, equation in enumerate(equations):
+        left, right = equation.split('=')
+        if left == element:
+            return index, right
+        elif right == element:
+            return index, left
+    return -1, None
+
+def replacer(element, equations, nums_from_statement):
+    # Gets equation with unknown vars or numbers, tries to find those in other equations.
+    # Returns equation without vars or unknown numbers if possible.
+
+    equations_to_find = equations
+    continue_external_loop = False
+    while True:
+        if len(equations_to_find) == 0:
+            raise Exception('Can\'t build expression', element)
+        eq_index, eq = self.find_equation(element, equations_to_find)
+        if eq is None:
+            raise Exception('Bad, couldn\'t find equation.', element)
+
+        num_var_pattern = re.compile('\d+|[a-zA-Z]+')
+        expression = ''
+        match = num_var_pattern.search(eq)
+        start = 0
+        while match is not None:
+            expression += eq[start:match.start()]
+            replacement = None
+            if match.group(0) in nums_from_statement:
+                replacement = eq[match.start():match.end()]
+            else:
+                try:
+                    replacement = self.replacer(match.group(0), equations_to_find[eq_index + 1:], nums_from_statement)
+                except Exception as e:
+                    equations_to_find = equations_to_find[eq_index + 1:]
+                    continue_external_loop = True
+                    break
+
+            expression += replacement
+            start = match.end()
+            match = num_var_pattern.search(eq, match.end())
+
+        if continue_external_loop:
+            continue_external_loop = False
+            continue
+        expression += eq[start:]
+        return expression  
+
+def build_expression(self, equations, nums_from_statement):
+    """Tries to build the solution equation."""
+    exp = 'X = ' + self.replacer(equations[0].split('=')[1], equations[1:], nums_from_statement)
+
+    return exp
+
 def remove_brackets(x):
+    """Removes the superfluous brackets."""
     y = x
     if x[0] == "(" and x[-1] == ")":
         x = x[1:-1]
@@ -160,93 +338,8 @@ def remove_brackets(x):
             return x
     return y
 
-
-def check_bracket(x, english=False):
-    if english:
-        for idx, s in enumerate(x):
-            if s == '[':
-                x[idx] = '('
-            elif s == '}':
-                x[idx] = ')'
-        s = x[0]
-        idx = 0
-        if s == "(":
-            flag = 1
-            temp_idx = idx + 1
-            while flag > 0 and temp_idx < len(x):
-                if x[temp_idx] == ")":
-                    flag -= 1
-                elif x[temp_idx] == "(":
-                    flag += 1
-                temp_idx += 1
-            if temp_idx == len(x):
-                x = x[idx + 1:temp_idx - 1]
-            elif x[temp_idx] != "*" and x[temp_idx] != "/":
-                x = x[idx + 1:temp_idx - 1] + x[temp_idx:]
-        while True:
-            y = len(x)
-            for idx, s in enumerate(x):
-                if s == "+" and idx + 1 < len(x) and x[idx + 1] == "(":
-                    flag = 1
-                    temp_idx = idx + 2
-                    while flag > 0 and temp_idx < len(x):
-                        if x[temp_idx] == ")":
-                            flag -= 1
-                        elif x[temp_idx] == "(":
-                            flag += 1
-                        temp_idx += 1
-                    if temp_idx == len(x):
-                        x = x[:idx + 1] + x[idx + 2:temp_idx - 1]
-                        break
-                    elif x[temp_idx] != "*" and x[temp_idx] != "/":
-                        x = x[:idx + 1] + x[idx + 2:temp_idx - 1] + x[temp_idx:]
-                        break
-            if y == len(x):
-                break
-        return x
-
-    lx = len(x)
-    for idx, s in enumerate(x):
-        if s == "[":
-            flag_b = 0
-            flag = False
-            temp_idx = idx
-            while temp_idx < lx:
-                if x[temp_idx] == "]":
-                    flag_b += 1
-                elif x[temp_idx] == "[":
-                    flag_b -= 1
-                if x[temp_idx] == "(" or x[temp_idx] == "[":
-                    flag = True
-                if x[temp_idx] == "]" and flag_b == 0:
-                    break
-                temp_idx += 1
-            if not flag:
-                x[idx] = "("
-                x[temp_idx] = ")"
-                continue
-        if s == "(":
-            flag_b = 0
-            flag = False
-            temp_idx = idx
-            while temp_idx < lx:
-                if x[temp_idx] == ")":
-                    flag_b += 1
-                elif x[temp_idx] == "(":
-                    flag_b -= 1
-                if x[temp_idx] == "[":
-                    flag = True
-                if x[temp_idx] == ")" and flag_b == 0:
-                    break
-                temp_idx += 1
-            if not flag:
-                x[idx] = "["
-                x[temp_idx] = "]"
-    return x
-
-
-# Return a list of indexes, one for each word in the sentence, plus EOS
 def indexes_from_sentence(lang, sentence, tree=False):
+    """Returns a list of indexes, one for each word in the sentence, plus EOS."""
     res = []
     for word in sentence:
         if len(word) == 0:
@@ -259,52 +352,86 @@ def indexes_from_sentence(lang, sentence, tree=False):
         res.append(lang.word2index["EOS"])
     return res
 
+def sentence_from_indexes(lang, indices):
+    """Returns a list of words from the given indices."""
+    sent = []
+    for ind in indices:
+        sent.append(lang.index2word[ind])
+    return sent
 
-# Pad a with the PAD symbol
 def pad_seq(seq, seq_len, max_length):
+    """Pad a with the PAD symbol."""
     seq += [PAD_token for _ in range(max_length - seq_len)]
     return seq
 
+def stack_to_string(stack):
+    op = ""
+    for i in stack:
+        if op == "":
+            op = op + i
+        else:
+            op = op + ' ' + i
+    return op
 
-# 用于获取等式中没有出现在输出字典中的数字
-def get_num_stack(eq, output_lang, num_pos):
-    num_stack = []
-    for word in eq:
-        temp_num = []
-        flag_not = True
-        if word not in output_lang.index2word:
-            flag_not = False
-            for i, j in enumerate(num_pos):
-                if j == word:
-                    temp_num.append(i)
-        if not flag_not and len(temp_num) != 0:  # 数字/符号不在词表中，但在等式中出现
-            num_stack.append(temp_num)
-        if not flag_not and len(temp_num) == 0:  # 数字/符号不在词表中，且不在等式中出现
-            num_stack.append([_ for _ in range(len(num_pos))])
-    num_stack.reverse()
-    return num_stack
+def index_batch_to_words(input_batch, input_length, lang):
+    """Converts input_batch with token ids into word tokens."""
 
+    contextual_input = []
+    for i in range(len(input_batch)):
+        contextual_input.append(stack_to_string(sentence_from_indexes(lang, input_batch[i][:input_length[i]])))
 
-# # 将模型输出的表达式(id表示)转换为真正human可读的表达式
-# def convert_expression_list(expression, output_lang, num_list, num_stack=None):
-#     max_index = output_lang.n_words
-#     res = []
-#     for i in expression:
-#         # if i == 0:
-#         #     return res
-#         if i < max_index - 1:
-#             idx = output_lang.index2word[i]
-#             if idx[0] == "N":
-#                 if int(idx[1:]) >= len(num_list):
-#                     return None
-#                 res.append(num_list[int(idx[1:])])
-#             else:
-#                 res.append(idx)
-#         else:
-#             pos_list = num_stack.pop()
-#             c = num_list[pos_list[0]]
-#             res.append(c)
-#     return res
+    return contextual_input
 
 
 
+def find_equations_in_statement(sample):
+    """Finds if problem statement contains equations that needs to be solved."""
+    problem = sample.problem
+    smaller_problem = problem.replace('solution', '')
+    smaller_problem = problem.replace('equation', '')
+    keywords = ['solve', 'evaluate']
+    for keyword in keywords:
+        if keyword in problem:
+            smaller_problem = problem.replace(keyword, '')
+            not_equations_len = sum([len(x) for x in smaller_problem.split('$')[0::2]])
+
+            if not_equations_len > 60:
+                continue
+            equations = get_final_equations(sample)
+            if len(equations) == 0:
+                return problem, []
+            return keyword + ' ' + ' ; '.join(equations), equations
+    return problem, []
+
+def parse_equation(equation):
+    """Parses the given equation using SymPy latex parser."""
+    try:
+        parsed = parse_latex(equation)
+        parsed = str(parsed)[3:-1]
+        lhs, rhs = parsed.split(',')
+        eq = lhs + ' = ' + rhs
+        for op in '*+-/()^':
+            eq = eq.replace(op, ' ' + op + ' ')
+        return eq
+    except Exception as e:
+        print(e)
+        return None   
+
+def get_final_equations(sample):
+    raw_equations = sample.get_raw_equations(sample.problem)
+    equations = sample.extract_equations(raw_equations, sample.problem)
+        
+    problem = sample.problem
+    for i in range(2):
+        if len(equations) == 0:
+            raw_equations = sample.get_raw_equations(sample.problem, not_dollars=True)
+            equations = sample.extract_equations(raw_equations, sample.problem)
+            continue
+        break
+
+    final_eqs = []
+    for eq in equations:
+        parsed = parse_equation(eq)
+        if parsed is not None:
+            final_eqs.append(parsed)
+    return final_eqs    

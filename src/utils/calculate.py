@@ -40,7 +40,8 @@ def solve_linear_equation_with_multiple_unknown(equ_str_list, var_str):
             equ_list.append(parse_expr(equ_str_split[0]))
         else:
             equ_list.append(equ_str_split[0] + ' - ( ' + equ_str_split[1] + ' )')
-    ans = solve_poly_system(equ_list, var_list)
+    ans = solve(equ_list, var_list)
+
     if isinstance(ans, dict):
         return list(ans.values())
     elif isinstance(ans, list):
@@ -336,6 +337,7 @@ def compute_equations_result(test_res, test_tar, output_lang, num_list, num_stac
         return True, True, True, test_expression, tar_expression, None
     test = out_expression_list(test_res, output_lang, num_list)
     tar = out_expression_list(test_tar, output_lang, num_list, copy.deepcopy(num_stack))
+
     if test is None:
         if not tree or (tree and infix):
             tar_ept = ExpressionTree()
@@ -415,7 +417,10 @@ def compute_equations_result(test_res, test_tar, output_lang, num_list, num_stac
     test_ans = compute_expressions(test_expression, test_var_list)
     tar_ans = compute_expressions(tar_expression, tar_var_list)
 
-    if test_ans == 'error' or test_ans == [] or tar_ans is None or tar_ans == 'error' or tar_ans == []:
+    if tar_ans == 'error':
+        tar_ans = ans_list
+
+    if test_ans == 'error' or test_ans == [] or test_ans is None or tar_ans is None or tar_ans == 'error' or tar_ans == []:
         return False, False, False, test_expression, tar_expression, None
 
     # The computed values for the target and the predicted expressions match.
