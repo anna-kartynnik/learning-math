@@ -1,3 +1,9 @@
+"""Builds expression trees.
+
+Borrowed with modifications from: https://github.com/QinJinghui/SAU-Solver
+"""
+
+
 from copy import deepcopy
 
 
@@ -42,14 +48,12 @@ class ExpressionTree(object):
         infix_expression = new_infix_expression
 
         postfix_expression = self._infix2postfix(infix_expression)
-        # print("Postfix: ", postfix_expression)
 
         et_stack = []
-        # print(postfix_expression)
-        # 遍历后缀表达式的每个元素
+
         for elem in postfix_expression:
             # if operand, simply push into stack
-            if elem not in self.ops_list: #["+", "-", "*", "/", "^", '=']:
+            if elem not in self.ops_list:
                 if elem[0] == '-':
                     new_node = ExpressionTreeNode('-')
                     new_node.right = ExpressionTreeNode(elem[1:])
@@ -87,8 +91,7 @@ class ExpressionTree(object):
 
     def build_tree_from_postfix_expression(self, postfix_expression):
         et_stack = []
-        # print(postfix_expression)
-        # 遍历后缀表达式的每个元素
+
         for elem in postfix_expression:
             # if operand, simply push into stack
             if elem in ['(',')','[',']']:
@@ -101,18 +104,7 @@ class ExpressionTree(object):
                 # Operator
                 # Pop two top nodes in stack, make them as children, and add this subexpression to stack
                 new_node = ExpressionTreeNode(elem)
-                # right_node = et_stack.pop()
-                # left_node = None
-                # if len(et_stack) > 0:
-                #     left_node = et_stack.pop()
-                #
-                # right_node.parent = new_node
-                # if left_node:
-                #     left_node.parent = new_node
-                #
-                # new_node.right = right_node
-                # if left_node:
-                #     new_node.left = left_node
+
                 right_node = None
                 if len(et_stack) > 0:
                     right_node = et_stack.pop()
@@ -137,34 +129,16 @@ class ExpressionTree(object):
         self.root = et_stack.pop()
 
     def build_tree_from_prefix_expression(self, prefix_expression):
-        # postfix_expression = deepcopy(prefix_expression)
-        # postfix_expression.reverse()
-        # self.build_tree_from_postfix_expression(postfix_expression)
         et_stack = []
-        # print(postfix_expression)
-        # 遍历后缀表达式的每个元素
+
         prefix_expression.reverse()
-        # new_prefix_expression = []
-        # idx = 0
-        # while idx < len(prefix_expression):
-        #     if idx - 1 >=0 and idx + 1 < len(prefix_expression):
-        #         if prefix_expression[idx - 1] not in ["+", "-", "*", "/", "^", "="] and \
-        #                         prefix_expression[idx] == '-' and \
-        #                         prefix_expression[idx + 1] not in ["+", "-", "*", "/", "^", "="]:
-        #             new_prefix_expression[-1] = '-' + new_prefix_expression[-1]
-        #         else:
-        #             new_prefix_expression.append(prefix_expression[idx])
-        #     else:
-        #         new_prefix_expression.append(prefix_expression[idx])
-        #     idx = idx + 1
-        # prefix_expression = new_prefix_expression
 
         for elem in prefix_expression:
             # if operand, simply push into stack
             if elem in ['(',')','[',']']:
                 continue
 
-            if elem not in self.ops_list: #["+", "-", "*", "/", "^", '=']:
+            if elem not in self.ops_list:
                 if elem[0] == '-':
                     new_node = ExpressionTreeNode('-')
                     new_node.right = ExpressionTreeNode(elem[1:])
@@ -217,17 +191,12 @@ class ExpressionTree(object):
         if et_node == None:
             return []
         else:
-            if et_node.value in self.ops_list: #["+", "-", "*", "/", "^", '=']:
-                # if et_node.value == '^':
-                #     left_list = self._infix(et_node.left)
-                #     right_list = self._infix(et_node.right)
-                # else:
+            if et_node.value in self.ops_list:
                 if et_node.left and et_node.left.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] > self.ops_priority[et_node.left.value]:
                     left_list = ['('] + self._infix(et_node.left) + [')']
                 else:
                     left_list = self._infix(et_node.left)
 
-                # if et_node.right and et_node.value == "-" and et_node.right.value == "+":
                 if et_node.right and et_node.right.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] >= self.ops_priority[et_node.right.value]:
                     right_list = ['('] + self._infix(et_node.right) + [')']
                 else:
@@ -241,20 +210,6 @@ class ExpressionTree(object):
             return []
         else:
             if et_node.value in self.ops_list:
-                # if et_node.value == '^':
-                #     left_list = self._prefix(et_node.left)
-                #     right_list = self._prefix(et_node.right)
-                # else:
-                # if et_node.left and et_node.left.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] > self.ops_priority[et_node.left.value]:
-                #     left_list = ['('] + self._prefix(et_node.left) + [')']
-                # else:
-                #     left_list = self._prefix(et_node.left)
-
-                # if et_node.right and et_node.value == "-" and et_node.right.value == "+":
-                # if et_node.right and et_node.right.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] >= self.ops_priority[et_node.right.value]:
-                #     right_list = ['('] + self._prefix(et_node.right) + [')']
-                # else:
-                #     right_list = self._prefix(et_node.right)
                 left_list = self._prefix(et_node.left)
                 right_list = self._prefix(et_node.right)
                 return [et_node.value] + left_list + right_list
@@ -266,20 +221,6 @@ class ExpressionTree(object):
             return []
         else:
             if et_node.value in self.ops_list:
-                # if et_node.value == '^':
-                #     left_list = self._postfix(et_node.left)
-                #     right_list = self._postfix(et_node.right)
-                # else:
-                # if et_node.left and et_node.left.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] > self.ops_priority[et_node.left.value]:
-                #     left_list = ['('] + self._postfix(et_node.left) + [')']
-                # else:
-                #     left_list = self._postfix(et_node.left)
-
-                # if et_node.right and et_node.value == "-" and et_node.right.value == "+":
-                # if et_node.right and et_node.right.value in ["+", "-", "*", "/", "=","^"] and self.ops_priority[et_node.value] >= self.ops_priority[et_node.right.value]:
-                #     right_list = ['('] + self._postfix(et_node.right) + [')']
-                # else:
-                #     right_list = self._postfix(et_node.right)
                 left_list = self._postfix(et_node.left)
                 right_list = self._postfix(et_node.right)
                 return left_list + right_list + [et_node.value]
@@ -315,13 +256,10 @@ class ExpressionTree(object):
             elif elem in self.ops_priority:
                 while len(ops_stack) > 0 and ops_stack[-1] not in ['(','['] and \
                                 self.ops_priority[elem] <= self.ops_priority[ops_stack[-1]]:
-                    # 这说明当前操作的顺序比ops_stack的操作顺序优先级低
-                    # 先将ops_stack中优先级比当前操作符高的放进后缀表达式
-                    # 直到第一个低于当前优先级的操作符为止
+
                     postfix_expression.append(ops_stack.pop())
                 ops_stack.append(elem)
             else:
-                # 操作数直接放入后缀表达式中
                 postfix_expression.append(elem)
         while len(ops_stack) > 0:
             postfix_expression.append(ops_stack.pop())
@@ -348,13 +286,10 @@ class ExpressionTree(object):
             elif elem in self.ops_priority:
                 while len(ops_stack) > 0 and ops_stack[-1] not in ['(','['] and \
                                 self.ops_priority[elem] < self.ops_priority[ops_stack[-1]]:
-                    # 这说明当前操作的顺序比ops_stack的操作顺序优先级低
-                    # 先将ops_stack中优先级比当前操作符高的放进前缀表达式
-                    # 直到第一个低于当前优先级的操作符为止
+
                     prefix_expression.append(ops_stack.pop())
                 ops_stack.append(elem)
             else:
-                # 操作数直接放入前缀表达式中
                 prefix_expression.append(elem)
         while len(ops_stack) > 0:
             prefix_expression.append(ops_stack.pop())
