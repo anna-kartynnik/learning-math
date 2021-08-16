@@ -55,6 +55,42 @@ pip install install --upgrade dgl-cu111
 
 ## Running
 
+Throughout the competition our team tried multiple different methods to arrive at a solution.  The below instructions show how to utilize our code to generate different types of results:
+
+### Baseline GPT2 Code
+
+As provided, the starter code utilizes GPT2 to solely solve the learning math problem. First, the model can be trained by running the following:
+
+```bash
+python src/train_gp2_model.py --MATH-dataroot "./dataset/train/*/*" --save-steps 10 --epochs 2 --batch-size-per-replica 4 --arch distilgpt2 --grad-acc-steps 1
+```
+
+Next, the trained model can be evaluated to produce the `predictions.csv` file by running (where the --load flag is changed to match the path of the trained model):
+
+```bash
+python src/eval_gpt2_model.py --load "./checkpoints/TEMP/08-14-2021__14:31:24/final_checkpoint/" --math-dataroot "./dataset/test/*/*" --arch distilgpt2
+```
+
+### Other Transformer Code
+
+In addition to GPT2, we also tested using different transformer only architectures by changing the starting scripts as needed to work with these formats.  The following scripts are provided, which can be trained and evaluated in a similar manner as the GPT2 starter code:
+
+```bash
+
+## BERT and Roberta
+python src/train_bert_model.py -h
+
+python src/eval_bert_model.py -h
+
+## T5
+python src/train_t5_model.py -h
+
+python src/eval_t5_model.py -h
+
+```
+
+### Graph2Tree Code
+
 In order to train a model, the following command can be used:
 
 ```bash
@@ -65,10 +101,22 @@ python trainer.py
 
 The command can be run with the -h flag to see the various parameters that can be set such as the location of the dataset, the learning rate, max number of epochs, and beam search parameters.
 
+### Graph2Tree with Transformer Code
 
-## Results
+Another promising path was to build off of the provided code to combine transformers with a graph2tree methodology.  To do this, first we can run the following to process and tokenize the dataset with the T5 transformer:
 
-TBD
+```bash
+python src/export_dataset_t5.py --tokenizer t5 --mode train
+```
+
+After this is run, there is a pickle file generated which contains the processed dataset (`t5-math-data.pickle`).  Once created, a jupyter notebook server can be started, and the user can execute the `src/custom-graph2tree-t5.ipynb` file which will load the dataset and use the provided code to begin training based on a combination of the provided code and some custom functions to fill in the missing pieces:
+
+```bash
+jupyter notebook ./src
+
+```
+
+
 
 
 ## Resources
