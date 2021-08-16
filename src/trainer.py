@@ -257,7 +257,7 @@ def main():
 		best_acc = runner.train()
 
 		if len(test_pairs) > 0:
-			print('Best validation accuracy for fold {} is {:.3f}'.format(fold_index + 1, best_acc[1]))
+			print('Best validation accuracy for fold {} is {:.3f}'.format(fold_index + 1, best_acc))
 
 		end = time.time()
 		print('total time for fold {}: {} minutes\n'.format(fold_index + 1, (end - start) / 60))
